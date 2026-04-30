@@ -5,6 +5,7 @@ import { Stethoscope, RotateCcw, LayoutDashboard, HeartPulse, Briefcase, ShieldC
 import { useChecklistStore } from "@/lib/use-checklist-store";
 import { Dashboard } from "@/components/Dashboard";
 import { ChecklistSection } from "@/components/ChecklistSection";
+import { ServiceMatrix } from "@/components/ServiceMatrix";
 import { computeMaturity, scoreColorVar } from "@/lib/checklist-data";
 
 export const Route = createFileRoute("/")({
@@ -88,26 +89,35 @@ function Index() {
             <Dashboard answers={answers} />
           </TabsContent>
 
-          <TabsContent value="assistencial" className="mt-8">
-            <SectionHeader
-              title="Combo Assistencial"
-              subtitle="Documentação e protocolos da relação com o paciente."
-            />
-            <ChecklistSection category="assistencial" answers={answers} setAnswer={setAnswer} />
+          <TabsContent value="assistencial" className="mt-8 space-y-8">
+            <div>
+              <SectionHeader
+                title="Combo Assistencial: Blindagem Jurídica"
+                subtitle="Documentação geral da relação com o paciente."
+              />
+              <ChecklistSection category="assistencial" answers={answers} setAnswer={setAnswer} />
+            </div>
+            <div>
+              <SectionHeader
+                title="TCLE & POP por Serviço"
+                subtitle="Matriz compacta: marque a existência de TCLE e POP para cada procedimento."
+              />
+              <ServiceMatrix answers={answers} setAnswer={setAnswer} />
+            </div>
           </TabsContent>
 
           <TabsContent value="trabalhista" className="mt-8">
             <SectionHeader
-              title="Pessoas e Parcerias"
-              subtitle="Blindagem da equipe, contratos e governança societária."
+              title="Combo Pessoas e Parcerias"
+              subtitle="Blindagem da equipe, contratos, LGPD e saúde ocupacional."
             />
             <ChecklistSection category="trabalhista" answers={answers} setAnswer={setAnswer} />
           </TabsContent>
 
           <TabsContent value="sanitaria" className="mt-8">
             <SectionHeader
-              title="Conformidade Sanitária"
-              subtitle="Vigilância Sanitária, PGRSS, infraestrutura e segurança."
+              title="Combo Vigilância Sanitária e Infraestrutura"
+              subtitle="Alvarás, PGRSS, CME, infraestrutura e segurança sanitária."
             />
             <ChecklistSection category="sanitaria" answers={answers} setAnswer={setAnswer} />
           </TabsContent>
