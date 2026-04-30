@@ -10,7 +10,7 @@ export interface ChecklistItem {
 
 export const CATEGORIES: { id: Category; label: string; short: string }[] = [
   { id: "assistencial", label: "Combo Assistencial", short: "Assistencial" },
-  { id: "trabalhista", label: "Combo Trabalhista/Empresarial", short: "Trabalhista" },
+  { id: "trabalhista", label: "Pessoas e Parcerias", short: "Pessoas" },
   { id: "sanitaria", label: "Conformidade Sanitária", short: "Sanitária" },
 ];
 
