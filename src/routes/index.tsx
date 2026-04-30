@@ -20,7 +20,7 @@ export const Route = createFileRoute("/")({
 const TABS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "assistencial", label: "Assistencial", icon: HeartPulse },
-  { id: "trabalhista", label: "Trabalhista", icon: Briefcase },
+  { id: "trabalhista", label: "Pessoas e Parcerias", icon: Briefcase },
   { id: "sanitaria", label: "Sanitária", icon: ShieldCheck },
 ] as const;
 
@@ -98,7 +98,7 @@ function Index() {
 
           <TabsContent value="trabalhista" className="mt-8">
             <SectionHeader
-              title="Combo Trabalhista / Empresarial"
+              title="Pessoas e Parcerias"
               subtitle="Blindagem da equipe, contratos e governança societária."
             />
             <ChecklistSection category="trabalhista" answers={answers} setAnswer={setAnswer} />
