@@ -120,7 +120,7 @@ export function Dashboard({ answers }: Props) {
                         {cat?.short}
                       </span>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">{g.description}</p>
+                    {g.description && <p className="text-sm text-muted-foreground mt-1">{g.description}</p>}
                   </div>
                   <div className="text-xs font-semibold text-danger flex-shrink-0">
                     Peso {g.weight}
