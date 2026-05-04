@@ -23,10 +23,10 @@ export function ChecklistSection({ category, answers, setAnswer }: Props) {
 
   const ordered = useMemo(() => {
     return items
-      .map((it, idx) => ({ it, idx, isNa: answers[it.id]?.answer === "na" }))
+      .map((it) => ({ it, isNa: answers[it.id]?.answer === "na" }))
       .sort((a, b) => {
         if (a.isNa !== b.isNa) return a.isNa ? 1 : -1;
-        return a.title?.localeCompare?.(b.it.title, "pt-BR") ?? a.it.title.localeCompare(b.it.title, "pt-BR");
+        return a.it.title.localeCompare(b.it.title, "pt-BR");
       })
       .map(({ it }) => it);
   }, [items, answers]);
@@ -41,7 +41,7 @@ export function ChecklistSection({ category, answers, setAnswer }: Props) {
       </div>
       <ul className="divide-y divide-border/60 rounded-lg border border-border/60 bg-card overflow-hidden">
         {ordered.map((item, idx) => {
-          const current = answers[item.id] ?? null;
+          const current = answers[item.id]?.answer ?? null;
           const isNa = current === "na";
           return (
             <li
