@@ -1,11 +1,11 @@
 import { useMemo } from "react";
-import { CHECKLIST, type Answer, type Category } from "@/lib/checklist-data";
+import { CHECKLIST, type Answer, type Category, type ResponseMap } from "@/lib/checklist-data";
 import { Check, X, MinusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
   category: Category;
-  answers: Record<string, Answer>;
+  answers: ResponseMap;
   setAnswer: (id: string, value: Answer) => void;
 }
 
@@ -16,24 +16,22 @@ const OPTIONS: { value: Answer; label: string; icon: typeof Check; activeClass: 
 ];
 
 export function ChecklistSection({ category, answers, setAnswer }: Props) {
-  // exclude TCLE/POP service-matrix items from the general list (rendered separately)
   const items = useMemo(
     () => CHECKLIST.filter((i) => i.category === category && !i.matrix),
     [category],
   );
 
-  // sort: N/A items go to the end, otherwise preserve original order
   const ordered = useMemo(() => {
     return items
-      .map((it, idx) => ({ it, idx, isNa: answers[it.id] === "na" }))
+      .map((it, idx) => ({ it, idx, isNa: answers[it.id]?.answer === "na" }))
       .sort((a, b) => {
         if (a.isNa !== b.isNa) return a.isNa ? 1 : -1;
-        return a.idx - b.idx;
+        return a.title?.localeCompare?.(b.it.title, "pt-BR") ?? a.it.title.localeCompare(b.it.title, "pt-BR");
       })
       .map(({ it }) => it);
   }, [items, answers]);
 
-  const answered = items.filter((i) => answers[i.id]).length;
+  const answered = items.filter((i) => answers[i.id]?.answer).length;
 
   return (
     <div className="space-y-3">
