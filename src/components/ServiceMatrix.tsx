@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
-import { ASSISTENCIAL_SERVICOS, type Answer } from "@/lib/checklist-data";
+import { ASSISTENCIAL_SERVICOS, type Answer, type ResponseMap } from "@/lib/checklist-data";
 import { Check, X, MinusCircle, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 
 interface Props {
-  answers: Record<string, Answer>;
+  answers: ResponseMap;
   setAnswer: (id: string, value: Answer) => void;
 }
 
