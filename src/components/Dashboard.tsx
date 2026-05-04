@@ -18,7 +18,7 @@ export function Dashboard({ answers }: Props) {
   }));
 
   const gargalos = CHECKLIST
-    .filter((i) => answers[i.id] === "nao")
+    .filter((i) => answers[i.id]?.answer === "nao")
     .sort((a, b) => b.weight - a.weight)
     .slice(0, 3);
 
