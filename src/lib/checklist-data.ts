@@ -94,7 +94,7 @@ const TRABALHISTA: { title: string; weight: number; norma?: string; risco?: stri
 ];
 
 // --- Sanitária ---
-const SANITARIA: { title: string; weight: number; norma?: string; risco?: string }[] = [
+const SANITARIA: { title: string; weight: number; norma?: string; risco?: string; referencia?: string }[] = [
   { title: "Alvará Sanitário atualizado e visível", weight: 10, norma: "RDC 50/2002; Lei 6.437/77", risco: "INTERDIÇÃO IMEDIATA do estabelecimento, multa de R$ 2k a R$ 1,5 mi e responsabilização criminal por exercício irregular." },
   { title: "Projeto Básico de Arquitetura (PBA) aprovado", weight: 9, norma: "RDC 50/2002", risco: "Negativa do alvará; obrigação de reforma; embargo da obra/atividade." },
   { title: "Inscrição no CNES com dados atualizados", weight: 8, norma: "Portaria GM/MS 1.646/2015", risco: "Bloqueio de repasses SUS e dificuldade de credenciamento com convênios." },
