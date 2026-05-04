@@ -59,8 +59,8 @@ export function ServiceMatrix({ answers, setAnswer }: Props) {
     const all = ASSISTENCIAL_SERVICOS.map((service, idx) => {
       const tcleId = idFor(idx, "tcle");
       const popId = idFor(idx, "pop");
-      const tcle = answers[tcleId] ?? null;
-      const pop = answers[popId] ?? null;
+      const tcle = answers[tcleId]?.answer ?? null;
+      const pop = answers[popId]?.answer ?? null;
       const allNa = tcle === "na" && pop === "na";
       return { service, idx, tcleId, popId, tcle, pop, allNa };
     });
