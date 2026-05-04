@@ -1,16 +1,37 @@
 import { useEffect, useState, useCallback } from "react";
-import type { Answer } from "./checklist-data";
+import type { Answer, ResponseMap, Quality } from "./checklist-data";
+import { EMPTY_RESPONSE } from "./checklist-data";
 
-const KEY = "maturidade-clinica-v1";
+const KEY = "maturidade-clinica-v2";
+const LEGACY_KEY = "maturidade-clinica-v1";
 
 export function useChecklistStore() {
-  const [answers, setAnswers] = useState<Record<string, Answer>>({});
+  const [responses, setResponses] = useState<ResponseMap>({});
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     try {
       const raw = typeof window !== "undefined" ? window.localStorage.getItem(KEY) : null;
-      if (raw) setAnswers(JSON.parse(raw));
+      if (raw) {
+        setResponses(JSON.parse(raw));
+      } else {
+        // Migrate legacy
+        const legacy = typeof window !== "undefined" ? window.localStorage.getItem(LEGACY_KEY) : null;
+        if (legacy) {
+          const parsed = JSON.parse(legacy) as Record<string, Answer | string>;
+          const migrated: ResponseMap = {};
+          for (const [id, v] of Object.entries(parsed)) {
+            if (v === "sim" || v === "nao" || v === "na") {
+              migrated[id] = {
+                answer: v as Answer,
+                quality: v === "sim" ? ("bom" as Quality) : null,
+                justification: "",
+              };
+            }
+          }
+          setResponses(migrated);
+        }
+      }
     } catch {}
     setLoaded(true);
   }, []);
@@ -18,15 +39,19 @@ export function useChecklistStore() {
   useEffect(() => {
     if (!loaded) return;
     try {
-      window.localStorage.setItem(KEY, JSON.stringify(answers));
+      window.localStorage.setItem(KEY, JSON.stringify(responses));
     } catch {}
-  }, [answers, loaded]);
+  }, [responses, loaded]);
 
   const setAnswer = useCallback((id: string, value: Answer) => {
-    setAnswers((prev) => ({ ...prev, [id]: value }));
+    setResponses((prev) => {
+      const current = prev[id] ?? EMPTY_RESPONSE;
+      const quality = value === "sim" ? current.quality ?? ("bom" as Quality) : current.quality;
+      return { ...prev, [id]: { ...current, answer: value, quality } };
+    });
   }, []);
 
-  const reset = useCallback(() => setAnswers({}), []);
+  const reset = useCallback(() => setResponses({}), []);
 
-  return { answers, setAnswer, reset, loaded };
+  return { answers: responses, setAnswer, reset, loaded };
 }
