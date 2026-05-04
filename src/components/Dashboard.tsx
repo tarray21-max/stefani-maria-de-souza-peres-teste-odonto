@@ -1,4 +1,4 @@
-import { CHECKLIST, CATEGORIES, computeMaturity, scoreColorVar, type Answer, type Category } from "@/lib/checklist-data";
+import { CHECKLIST, CATEGORIES, computeMaturity, scoreColorVar, type ResponseMap } from "@/lib/checklist-data";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { MaturityGauge } from "./MaturityGauge";
@@ -6,7 +6,7 @@ import { ShieldBuilder } from "./ShieldBuilder";
 import { AlertTriangle, CheckCircle2, MinusCircle, TrendingUp } from "lucide-react";
 
 interface Props {
-  answers: Record<string, Answer>;
+  answers: ResponseMap;
 }
 
 export function Dashboard({ answers }: Props) {
