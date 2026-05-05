@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Stethoscope, RotateCcw, LayoutDashboard, HeartPulse, Briefcase, ShieldCheck } from "lucide-react";
+import { Stethoscope, LayoutDashboard, HeartPulse, Briefcase, ShieldCheck } from "lucide-react";
 import { useChecklistStore } from "@/lib/use-checklist-store";
 import { Dashboard } from "@/components/Dashboard";
 import { ChecklistSection } from "@/components/ChecklistSection";
 import { ServiceMatrix } from "@/components/ServiceMatrix";
+import { ResetButton } from "@/components/ResetButton";
 import { computeMaturity, scoreColorVar } from "@/lib/checklist-data";
 
 export const Route = createFileRoute("/")({
