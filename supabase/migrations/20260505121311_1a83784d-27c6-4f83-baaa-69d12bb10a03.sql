@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS responses_client_item_uniq ON public.responses(client_id, item_id);
