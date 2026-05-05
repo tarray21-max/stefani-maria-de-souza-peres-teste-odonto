@@ -60,10 +60,7 @@ function Index() {
                 {loaded ? `${Math.round(global.score)}% maturidade` : "—"}
               </span>
             </div>
-            <Button variant="ghost" size="sm" onClick={reset} className="text-muted-foreground">
-              <RotateCcw className="w-4 h-4" />
-              <span className="hidden sm:inline">Reiniciar</span>
-            </Button>
+            <ResetButton onConfirm={reset} />
           </div>
         </div>
       </header>
