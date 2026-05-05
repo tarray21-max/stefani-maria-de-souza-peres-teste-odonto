@@ -27,7 +27,7 @@ const TABS = [
 ] as const;
 
 function Index() {
-  const { answers, setAnswer, reset, loaded } = useChecklistStore();
+  const { answers, setAnswer, setQuality, setJustification, reset, loaded } = useChecklistStore();
   const global = computeMaturity(answers);
   const color = scoreColorVar(global.score);
 
