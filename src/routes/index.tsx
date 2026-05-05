@@ -1,4 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Stethoscope, LayoutDashboard, HeartPulse, Briefcase, ShieldCheck, LogOut } from "lucide-react";
@@ -31,14 +32,21 @@ const TABS = [
 ] as const;
 
 function Index() {
-  const navigate = useNavigate();
   const { user, loading: authLoading, signOut } = useAuth();
   const { clients, current, setCurrentId } = useClients();
 
-  // Redirect to login if not signed in
-  if (!authLoading && !user) {
-    navigate({ to: "/login", search: { redirect: "/" } });
-    return null;
+  useEffect(() => {
+    if (!authLoading && !user) {
+      window.location.href = "/login";
+    }
+  }, [authLoading, user]);
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground text-sm">
+        Carregando…
+      </div>
+    );
   }
 
   return (
@@ -49,7 +57,7 @@ function Index() {
         onSelect={setCurrentId}
         onSignOut={async () => {
           await signOut();
-          navigate({ to: "/login", search: { redirect: "/" } });
+          window.location.href = "/login";
         }}
       />
 
