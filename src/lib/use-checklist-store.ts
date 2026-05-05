@@ -51,7 +51,30 @@ export function useChecklistStore() {
     });
   }, []);
 
-  const reset = useCallback(() => setResponses({}), []);
+  const setQuality = useCallback((id: string, quality: Quality) => {
+    setResponses((prev) => {
+      const current = prev[id] ?? EMPTY_RESPONSE;
+      return { ...prev, [id]: { ...current, quality } };
+    });
+  }, []);
 
-  return { answers: responses, setAnswer, reset, loaded };
+  const setJustification = useCallback((id: string, justification: string) => {
+    setResponses((prev) => {
+      const current = prev[id] ?? EMPTY_RESPONSE;
+      return { ...prev, [id]: { ...current, justification } };
+    });
+  }, []);
+
+  const reset = useCallback((justification?: string) => {
+    setResponses({});
+    if (justification) {
+      try {
+        const log = JSON.parse(window.localStorage.getItem("maturidade-reset-log") || "[]");
+        log.push({ at: new Date().toISOString(), justification });
+        window.localStorage.setItem("maturidade-reset-log", JSON.stringify(log));
+      } catch {}
+    }
+  }, []);
+
+  return { answers: responses, setAnswer, setQuality, setJustification, reset, loaded };
 }

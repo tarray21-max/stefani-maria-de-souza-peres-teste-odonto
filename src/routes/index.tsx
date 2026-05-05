@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Stethoscope, RotateCcw, LayoutDashboard, HeartPulse, Briefcase, ShieldCheck } from "lucide-react";
+import { Stethoscope, LayoutDashboard, HeartPulse, Briefcase, ShieldCheck } from "lucide-react";
 import { useChecklistStore } from "@/lib/use-checklist-store";
 import { Dashboard } from "@/components/Dashboard";
 import { ChecklistSection } from "@/components/ChecklistSection";
 import { ServiceMatrix } from "@/components/ServiceMatrix";
+import { ResetButton } from "@/components/ResetButton";
 import { computeMaturity, scoreColorVar } from "@/lib/checklist-data";
 
 export const Route = createFileRoute("/")({
@@ -26,7 +27,7 @@ const TABS = [
 ] as const;
 
 function Index() {
-  const { answers, setAnswer, reset, loaded } = useChecklistStore();
+  const { answers, setAnswer, setQuality, setJustification, reset, loaded } = useChecklistStore();
   const global = computeMaturity(answers);
   const color = scoreColorVar(global.score);
 
@@ -59,10 +60,7 @@ function Index() {
                 {loaded ? `${Math.round(global.score)}% maturidade` : "—"}
               </span>
             </div>
-            <Button variant="ghost" size="sm" onClick={reset} className="text-muted-foreground">
-              <RotateCcw className="w-4 h-4" />
-              <span className="hidden sm:inline">Reiniciar</span>
-            </Button>
+            <ResetButton onConfirm={reset} />
           </div>
         </div>
       </header>
@@ -95,7 +93,7 @@ function Index() {
                 title="Combo Assistencial: Blindagem Jurídica"
                 subtitle="Documentação geral da relação com o paciente."
               />
-              <ChecklistSection category="assistencial" answers={answers} setAnswer={setAnswer} />
+              <ChecklistSection category="assistencial" answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} />
             </div>
             <div>
               <SectionHeader
@@ -111,7 +109,7 @@ function Index() {
               title="Combo Pessoas e Parcerias"
               subtitle="Blindagem da equipe, contratos, LGPD e saúde ocupacional."
             />
-            <ChecklistSection category="trabalhista" answers={answers} setAnswer={setAnswer} />
+            <ChecklistSection category="trabalhista" answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} />
           </TabsContent>
 
           <TabsContent value="sanitaria" className="mt-8">
@@ -119,7 +117,7 @@ function Index() {
               title="Combo Vigilância Sanitária e Infraestrutura"
               subtitle="Alvarás, PGRSS, CME, infraestrutura e segurança sanitária."
             />
-            <ChecklistSection category="sanitaria" answers={answers} setAnswer={setAnswer} />
+            <ChecklistSection category="sanitaria" answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} />
           </TabsContent>
         </Tabs>
 
