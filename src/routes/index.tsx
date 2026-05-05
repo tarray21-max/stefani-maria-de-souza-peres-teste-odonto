@@ -93,7 +93,7 @@ function Index() {
                 title="Combo Assistencial: Blindagem Jurídica"
                 subtitle="Documentação geral da relação com o paciente."
               />
-              <ChecklistSection category="assistencial" answers={answers} setAnswer={setAnswer} />
+              <ChecklistSection category="assistencial" answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} />
             </div>
             <div>
               <SectionHeader
@@ -109,7 +109,7 @@ function Index() {
               title="Combo Pessoas e Parcerias"
               subtitle="Blindagem da equipe, contratos, LGPD e saúde ocupacional."
             />
-            <ChecklistSection category="trabalhista" answers={answers} setAnswer={setAnswer} />
+            <ChecklistSection category="trabalhista" answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} />
           </TabsContent>
 
           <TabsContent value="sanitaria" className="mt-8">
@@ -117,7 +117,7 @@ function Index() {
               title="Combo Vigilância Sanitária e Infraestrutura"
               subtitle="Alvarás, PGRSS, CME, infraestrutura e segurança sanitária."
             />
-            <ChecklistSection category="sanitaria" answers={answers} setAnswer={setAnswer} />
+            <ChecklistSection category="sanitaria" answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} />
           </TabsContent>
         </Tabs>
 
