@@ -77,7 +77,7 @@ function Index() {
   );
 }
 
-function ClientWorkspace({ clientId }: { clientId: string }) {
+function ClientWorkspace({ clientId, demo = false }: { clientId: string | null; demo?: boolean }) {
   const { answers, setAnswer, setQuality, setJustification, reset, loaded } = useChecklistStore(clientId);
   const global = computeMaturity(answers);
   const color = scoreColorVar(global.score);
