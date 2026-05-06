@@ -32,6 +32,7 @@ const TABS = [
   { id: "assistencial", label: "Assistencial", icon: HeartPulse },
   { id: "trabalhista", label: "Pessoas e Parcerias", icon: Briefcase },
   { id: "sanitaria", label: "Sanitária", icon: ShieldCheck },
+  { id: "evolucao", label: "Evolução", icon: LineChart },
 ] as const;
 
 function Index() {
