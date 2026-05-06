@@ -2,14 +2,17 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Stethoscope, LayoutDashboard, HeartPulse, Briefcase, ShieldCheck, LogOut } from "lucide-react";
+import { Stethoscope, LayoutDashboard, HeartPulse, Briefcase, ShieldCheck, LogOut, LineChart } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useChecklistStore } from "@/lib/use-checklist-store";
+import { useItems } from "@/lib/use-items";
 import { Dashboard } from "@/components/Dashboard";
 import { ChecklistSection } from "@/components/ChecklistSection";
 import { ServiceMatrix } from "@/components/ServiceMatrix";
 import { ResetButton } from "@/components/ResetButton";
 import { ClientIdentification } from "@/components/ClientIdentification";
+import { EvolutionReport } from "@/components/EvolutionReport";
+import { VisitorLinks } from "@/components/VisitorLinks";
 import { computeMaturity, scoreColorVar } from "@/lib/checklist-data";
 import { useAuth } from "@/lib/auth-context";
 import { useClients } from "@/lib/client-context";
@@ -29,6 +32,7 @@ const TABS = [
   { id: "assistencial", label: "Assistencial", icon: HeartPulse },
   { id: "trabalhista", label: "Pessoas e Parcerias", icon: Briefcase },
   { id: "sanitaria", label: "Sanitária", icon: ShieldCheck },
+  { id: "evolucao", label: "Evolução", icon: LineChart },
 ] as const;
 
 function Index() {
@@ -79,7 +83,8 @@ function Index() {
 
 function ClientWorkspace({ clientId, demo = false }: { clientId: string | null; demo?: boolean }) {
   const { answers, setAnswer, setQuality, setJustification, reset, loaded } = useChecklistStore(clientId);
-  const global = computeMaturity(answers);
+  const { items, refresh: refreshItems } = useItems(clientId);
+  const global = computeMaturity(answers, items);
   const color = scoreColorVar(global.score);
 
   return (
@@ -91,19 +96,18 @@ function ClientWorkspace({ clientId, demo = false }: { clientId: string | null; 
             {loaded ? `${Math.round(global.score)}% maturidade` : "Carregando…"}
           </span>
         </div>
-        <ResetButton onConfirm={(j) => reset(j)} />
+        <div className="flex items-center gap-2">
+          <VisitorLinks clientId={clientId} />
+          <ResetButton onConfirm={(j) => reset(j)} />
+        </div>
       </div>
 
       <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="w-full h-auto p-1 bg-muted/60 grid grid-cols-2 md:grid-cols-4 gap-1">
+        <TabsList className="w-full h-auto p-1 bg-muted/60 grid grid-cols-3 md:grid-cols-5 gap-1">
           {TABS.map((t) => {
             const Icon = t.icon;
             return (
-              <TabsTrigger
-                key={t.id}
-                value={t.id}
-                className="flex items-center gap-2 py-2.5 data-[state=active]:bg-card data-[state=active]:shadow-sm"
-              >
+              <TabsTrigger key={t.id} value={t.id} className="flex items-center gap-2 py-2.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
                 <Icon className="w-4 h-4" />
                 <span>{t.label}</span>
               </TabsTrigger>
@@ -112,13 +116,13 @@ function ClientWorkspace({ clientId, demo = false }: { clientId: string | null; 
         </TabsList>
 
         <TabsContent value="dashboard" className="mt-6">
-          <Dashboard answers={answers} />
+          <Dashboard answers={answers} items={items} />
         </TabsContent>
 
         <TabsContent value="assistencial" className="mt-6 space-y-8">
           <div>
             <SectionHeader title="Combo Assistencial: Blindagem Jurídica" subtitle="Documentação geral da relação com o paciente." />
-            <ChecklistSection category="assistencial" answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} />
+            <ChecklistSection category="assistencial" items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} />
           </div>
           <div>
             <SectionHeader title="TCLE & POP por Serviço" subtitle="Matriz compacta: marque a existência de TCLE e POP para cada procedimento." />
@@ -128,12 +132,17 @@ function ClientWorkspace({ clientId, demo = false }: { clientId: string | null; 
 
         <TabsContent value="trabalhista" className="mt-6">
           <SectionHeader title="Combo Pessoas e Parcerias" subtitle="Blindagem da equipe, contratos, LGPD e saúde ocupacional." />
-          <ChecklistSection category="trabalhista" answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} />
+          <ChecklistSection category="trabalhista" items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} />
         </TabsContent>
 
         <TabsContent value="sanitaria" className="mt-6">
           <SectionHeader title="Combo Vigilância Sanitária e Infraestrutura" subtitle="Alvarás, PGRSS, CME, infraestrutura e segurança sanitária." />
-          <ChecklistSection category="sanitaria" answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} />
+          <ChecklistSection category="sanitaria" items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} />
+        </TabsContent>
+
+        <TabsContent value="evolucao" className="mt-6">
+          <SectionHeader title="Relatório de Evolução" subtitle="Snapshots mensais e tendência da maturidade." />
+          <EvolutionReport clientId={clientId} answers={answers} items={items} />
         </TabsContent>
       </Tabs>
     </>
