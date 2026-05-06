@@ -83,7 +83,8 @@ function Index() {
 
 function ClientWorkspace({ clientId, demo = false }: { clientId: string | null; demo?: boolean }) {
   const { answers, setAnswer, setQuality, setJustification, reset, loaded } = useChecklistStore(clientId);
-  const global = computeMaturity(answers);
+  const { items, refresh: refreshItems } = useItems(clientId);
+  const global = computeMaturity(answers, items);
   const color = scoreColorVar(global.score);
 
   return (
@@ -95,19 +96,18 @@ function ClientWorkspace({ clientId, demo = false }: { clientId: string | null; 
             {loaded ? `${Math.round(global.score)}% maturidade` : "Carregando…"}
           </span>
         </div>
-        <ResetButton onConfirm={(j) => reset(j)} />
+        <div className="flex items-center gap-2">
+          <VisitorLinks clientId={clientId} />
+          <ResetButton onConfirm={(j) => reset(j)} />
+        </div>
       </div>
 
       <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="w-full h-auto p-1 bg-muted/60 grid grid-cols-2 md:grid-cols-4 gap-1">
+        <TabsList className="w-full h-auto p-1 bg-muted/60 grid grid-cols-3 md:grid-cols-5 gap-1">
           {TABS.map((t) => {
             const Icon = t.icon;
             return (
-              <TabsTrigger
-                key={t.id}
-                value={t.id}
-                className="flex items-center gap-2 py-2.5 data-[state=active]:bg-card data-[state=active]:shadow-sm"
-              >
+              <TabsTrigger key={t.id} value={t.id} className="flex items-center gap-2 py-2.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
                 <Icon className="w-4 h-4" />
                 <span>{t.label}</span>
               </TabsTrigger>
@@ -116,13 +116,13 @@ function ClientWorkspace({ clientId, demo = false }: { clientId: string | null; 
         </TabsList>
 
         <TabsContent value="dashboard" className="mt-6">
-          <Dashboard answers={answers} />
+          <Dashboard answers={answers} items={items} />
         </TabsContent>
 
         <TabsContent value="assistencial" className="mt-6 space-y-8">
           <div>
             <SectionHeader title="Combo Assistencial: Blindagem Jurídica" subtitle="Documentação geral da relação com o paciente." />
-            <ChecklistSection category="assistencial" answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} />
+            <ChecklistSection category="assistencial" items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} />
           </div>
           <div>
             <SectionHeader title="TCLE & POP por Serviço" subtitle="Matriz compacta: marque a existência de TCLE e POP para cada procedimento." />
@@ -132,12 +132,17 @@ function ClientWorkspace({ clientId, demo = false }: { clientId: string | null; 
 
         <TabsContent value="trabalhista" className="mt-6">
           <SectionHeader title="Combo Pessoas e Parcerias" subtitle="Blindagem da equipe, contratos, LGPD e saúde ocupacional." />
-          <ChecklistSection category="trabalhista" answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} />
+          <ChecklistSection category="trabalhista" items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} />
         </TabsContent>
 
         <TabsContent value="sanitaria" className="mt-6">
           <SectionHeader title="Combo Vigilância Sanitária e Infraestrutura" subtitle="Alvarás, PGRSS, CME, infraestrutura e segurança sanitária." />
-          <ChecklistSection category="sanitaria" answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} />
+          <ChecklistSection category="sanitaria" items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} />
+        </TabsContent>
+
+        <TabsContent value="evolucao" className="mt-6">
+          <SectionHeader title="Relatório de Evolução" subtitle="Snapshots mensais e tendência da maturidade." />
+          <EvolutionReport clientId={clientId} answers={answers} items={items} />
         </TabsContent>
       </Tabs>
     </>
