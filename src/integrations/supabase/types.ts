@@ -91,6 +91,63 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_items: {
+        Row: {
+          category: string
+          client_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          norma: string | null
+          risco: string | null
+          title: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          category: string
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          norma?: string | null
+          risco?: string | null
+          title: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          category?: string
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          norma?: string | null
+          risco?: string | null
+          title?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: []
+      }
+      disabled_items: {
+        Row: {
+          client_id: string
+          created_at: string
+          item_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          item_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          item_id?: string
+        }
+        Relationships: []
+      }
       monthly_snapshots: {
         Row: {
           client_id: string
@@ -295,6 +352,17 @@ export type Database = {
       is_client_member: {
         Args: { _client_id: string; _user_id: string }
         Returns: boolean
+      }
+      visitor_get_state: { Args: { _token: string }; Returns: Json }
+      visitor_set_answer: {
+        Args: {
+          _answer: string
+          _item_id: string
+          _justification: string
+          _quality: string
+          _token: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
