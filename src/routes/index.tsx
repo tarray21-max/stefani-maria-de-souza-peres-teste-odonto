@@ -62,17 +62,22 @@ function Index() {
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        {!current && (
+          <div className="mb-4 rounded-lg border border-dashed border-border bg-muted/40 p-3 text-xs text-muted-foreground text-center">
+            Você está visualizando o painel em modo demonstração. Cadastre uma clínica abaixo para salvar suas respostas na nuvem.
+          </div>
+        )}
         <ClientIdentification />
-        {current ? <ClientWorkspace clientId={current.id} /> : null}
+        <ClientWorkspace clientId={current?.id ?? null} demo={!current} />
         <footer className="mt-12 text-center text-xs text-muted-foreground">
-          Painel sincronizado em tempo real via Lovable Cloud.
+          {current ? "Painel sincronizado em tempo real via Lovable Cloud." : "Modo demonstração — respostas não são salvas."}
         </footer>
       </main>
     </div>
   );
 }
 
-function ClientWorkspace({ clientId }: { clientId: string }) {
+function ClientWorkspace({ clientId, demo = false }: { clientId: string | null; demo?: boolean }) {
   const { answers, setAnswer, setQuality, setJustification, reset, loaded } = useChecklistStore(clientId);
   const global = computeMaturity(answers);
   const color = scoreColorVar(global.score);
