@@ -364,6 +364,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      whoami: { Args: never; Returns: Json }
     }
     Enums: {
       answer_value: "sim" | "nao" | "na"

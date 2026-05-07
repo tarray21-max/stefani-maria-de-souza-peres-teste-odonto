@@ -50,7 +50,7 @@ export function ClientIdentification() {
         return toast.error(error.message);
       }
     } else {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("clients")
         .insert({
           owner_id: user.id,
@@ -62,14 +62,19 @@ export function ClientIdentification() {
           endereco: draft.endereco ?? null,
           telefone: draft.telefone ?? null,
           tipo_contrato: (draft.tipo_contrato as "assessoria_odontologica" | "regularizacao_sanitaria") ?? "assessoria_odontologica",
-        })
-        .select()
-        .single();
+        });
       if (error) {
         setBusy(false);
         return toast.error(error.message);
       }
-      if (data) setCurrentId(data.id);
+      // Recarrega a lista e seleciona a clínica recém-criada (por nome).
+      const { data: list } = await supabase
+        .from("clients")
+        .select("id, nome, created_at")
+        .eq("owner_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (list && list[0]) setCurrentId(list[0].id);
     }
     setBusy(false);
     setEditing(false);
