@@ -2,17 +2,17 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Stethoscope, LayoutDashboard, HeartPulse, Briefcase, ShieldCheck, LogOut, LineChart } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { LayoutDashboard, HeartPulse, Briefcase, ShieldCheck, Building2 } from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useChecklistStore } from "@/lib/use-checklist-store";
 import { useItems } from "@/lib/use-items";
 import { Dashboard } from "@/components/Dashboard";
 import { ChecklistSection } from "@/components/ChecklistSection";
 import { ServiceMatrix } from "@/components/ServiceMatrix";
 import { ResetButton } from "@/components/ResetButton";
-import { ClientIdentification } from "@/components/ClientIdentification";
-import { EvolutionReport } from "@/components/EvolutionReport";
+import { EvolutionTimeline } from "@/components/EvolutionTimeline";
 import { VisitorLinks } from "@/components/VisitorLinks";
+import { ClientSidebar } from "@/components/ClientSidebar";
 import { computeMaturity, scoreColorVar } from "@/lib/checklist-data";
 import { useAuth } from "@/lib/auth-context";
 import { useClients } from "@/lib/client-context";
@@ -28,16 +28,15 @@ export const Route = createFileRoute("/")({
 });
 
 const TABS = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { id: "dashboard", label: "Painel", icon: LayoutDashboard },
   { id: "assistencial", label: "Assistencial", icon: HeartPulse },
   { id: "trabalhista", label: "Pessoas e Parcerias", icon: Briefcase },
   { id: "sanitaria", label: "Sanitária", icon: ShieldCheck },
-  { id: "evolucao", label: "Evolução", icon: LineChart },
 ] as const;
 
 function Index() {
   const { user, loading: authLoading, signOut } = useAuth();
-  const { clients, current, setCurrentId } = useClients();
+  const { clients, current } = useClients();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -46,44 +45,61 @@ function Index() {
   }, [authLoading, user]);
 
   if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-muted-foreground text-sm">
-        Carregando…
-      </div>
-    );
+    return <div className="min-h-screen flex items-center justify-center text-muted-foreground text-sm">Carregando…</div>;
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AppHeader
-        clients={clients}
-        currentId={current?.id ?? ""}
-        onSelect={setCurrentId}
-        onSignOut={async () => {
-          await signOut();
-          window.location.href = "/login";
-        }}
-      />
+    <div className="min-h-screen flex w-full bg-background">
+      <ClientSidebar onSignOut={async () => { await signOut(); window.location.href = "/login"; }} />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        {!current && (
-          <div className="mb-4 rounded-lg border border-dashed border-border bg-muted/40 p-3 text-xs text-muted-foreground text-center">
-            Você está visualizando o painel em modo demonstração. Cadastre uma clínica abaixo para salvar suas respostas na nuvem.
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="h-12 flex items-center gap-2 border-b border-border/60 bg-card/60 backdrop-blur-sm sticky top-0 z-30 px-3">
+          <SidebarTrigger />
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-sm text-foreground truncate">
+              {current?.nome ?? "Selecione uma clínica"}
+            </div>
+            {current && (
+              <div className="text-[11px] text-muted-foreground truncate">
+                {[current.area === "odontologia" ? "Odontologia" : "Medicina", current.especialidade, current.cnpj].filter(Boolean).join(" • ")}
+              </div>
+            )}
           </div>
-        )}
-        <ClientIdentification />
-        <ClientWorkspace clientId={current?.id ?? null} demo={!current} />
-        <footer className="mt-12 text-center text-xs text-muted-foreground">
-          {current ? "Painel sincronizado em tempo real via Lovable Cloud." : "Modo demonstração — respostas não são salvas."}
-        </footer>
-      </main>
+        </header>
+
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-5">
+          {!current && clients.length === 0 ? (
+            <EmptyState />
+          ) : !current ? (
+            <div className="rounded-lg border border-dashed border-border bg-muted/40 p-6 text-sm text-muted-foreground text-center">
+              Selecione uma clínica na barra lateral para começar.
+            </div>
+          ) : (
+            <ClientWorkspace clientId={current.id} />
+          )}
+        </main>
+      </div>
     </div>
   );
 }
 
-function ClientWorkspace({ clientId, demo = false }: { clientId: string | null; demo?: boolean }) {
+function EmptyState() {
+  return (
+    <div className="text-center py-16">
+      <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4">
+        <Building2 className="w-7 h-7" />
+      </div>
+      <h2 className="text-xl font-bold text-foreground">Cadastre sua primeira clínica</h2>
+      <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
+        Use o botão <strong>+</strong> na barra lateral para criar uma clínica e desbloquear o painel.
+      </p>
+    </div>
+  );
+}
+
+function ClientWorkspace({ clientId }: { clientId: string }) {
   const { answers, setAnswer, setQuality, setJustification, reset, loaded } = useChecklistStore(clientId);
-  const { items, refresh: refreshItems } = useItems(clientId);
+  const { items, refresh: refreshItems, imageUrlsFor } = useItems(clientId);
   const global = computeMaturity(answers, items);
   const color = scoreColorVar(global.score);
 
@@ -103,26 +119,27 @@ function ClientWorkspace({ clientId, demo = false }: { clientId: string | null; 
       </div>
 
       <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="w-full h-auto p-1 bg-muted/60 grid grid-cols-3 md:grid-cols-5 gap-1">
+        <TabsList className="w-full h-auto p-1 bg-muted/60 grid grid-cols-2 md:grid-cols-4 gap-1">
           {TABS.map((t) => {
             const Icon = t.icon;
             return (
-              <TabsTrigger key={t.id} value={t.id} className="flex items-center gap-2 py-2.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+              <TabsTrigger key={t.id} value={t.id} className="flex items-center gap-2 py-2 data-[state=active]:bg-card data-[state=active]:shadow-sm">
                 <Icon className="w-4 h-4" />
-                <span>{t.label}</span>
+                <span className="text-sm">{t.label}</span>
               </TabsTrigger>
             );
           })}
         </TabsList>
 
-        <TabsContent value="dashboard" className="mt-6">
+        <TabsContent value="dashboard" className="mt-5 space-y-5">
           <Dashboard answers={answers} items={items} />
+          <EvolutionTimeline clientId={clientId} answers={answers} items={items} />
         </TabsContent>
 
-        <TabsContent value="assistencial" className="mt-6 space-y-8">
+        <TabsContent value="assistencial" className="mt-5 space-y-6">
           <div>
             <SectionHeader title="Combo Assistencial: Blindagem Jurídica" subtitle="Documentação geral da relação com o paciente." />
-            <ChecklistSection category="assistencial" items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} />
+            <ChecklistSection category="assistencial" items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} />
           </div>
           <div>
             <SectionHeader title="TCLE & POP por Serviço" subtitle="Matriz compacta: marque a existência de TCLE e POP para cada procedimento." />
@@ -130,79 +147,29 @@ function ClientWorkspace({ clientId, demo = false }: { clientId: string | null; 
           </div>
         </TabsContent>
 
-        <TabsContent value="trabalhista" className="mt-6">
+        <TabsContent value="trabalhista" className="mt-5">
           <SectionHeader title="Combo Pessoas e Parcerias" subtitle="Blindagem da equipe, contratos, LGPD e saúde ocupacional." />
-          <ChecklistSection category="trabalhista" items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} />
+          <ChecklistSection category="trabalhista" items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} />
         </TabsContent>
 
-        <TabsContent value="sanitaria" className="mt-6">
+        <TabsContent value="sanitaria" className="mt-5">
           <SectionHeader title="Combo Vigilância Sanitária e Infraestrutura" subtitle="Alvarás, PGRSS, CME, infraestrutura e segurança sanitária." />
-          <ChecklistSection category="sanitaria" items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} />
-        </TabsContent>
-
-        <TabsContent value="evolucao" className="mt-6">
-          <SectionHeader title="Relatório de Evolução" subtitle="Snapshots mensais e tendência da maturidade." />
-          <EvolutionReport clientId={clientId} answers={answers} items={items} />
+          <ChecklistSection category="sanitaria" items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} />
         </TabsContent>
       </Tabs>
+
+      <footer className="mt-10 text-center text-xs text-muted-foreground">
+        Painel sincronizado em tempo real via Lovable Cloud.
+      </footer>
     </>
-  );
-}
-
-function AppHeader({
-  clients,
-  currentId,
-  onSelect,
-  onSignOut,
-}: {
-  clients: { id: string; nome: string }[];
-  currentId: string;
-  onSelect: (id: string) => void;
-  onSignOut: () => void;
-}) {
-  return (
-    <header className="border-b border-border/60 bg-card/60 backdrop-blur-sm sticky top-0 z-30">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 min-w-0">
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-white flex-shrink-0"
-            style={{ background: "var(--gradient-primary)" }}
-          >
-            <Stethoscope className="w-5 h-5" />
-          </div>
-          <div className="min-w-0">
-            <h1 className="font-bold text-foreground leading-tight truncate">Maturidade Regulatória</h1>
-            <p className="text-xs text-muted-foreground truncate">Gestão para Clínicas de Saúde</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {clients.length > 0 && (
-            <Select value={currentId} onValueChange={onSelect}>
-              <SelectTrigger className="h-9 w-[180px] sm:w-[240px]">
-                <SelectValue placeholder="Selecionar clínica" />
-              </SelectTrigger>
-              <SelectContent>
-                {clients.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          <Button variant="ghost" size="sm" onClick={onSignOut} title="Sair">
-            <LogOut className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-    </header>
   );
 }
 
 function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
   return (
-    <div className="mb-4">
-      <h2 className="text-2xl font-bold text-foreground">{title}</h2>
-      <p className="text-muted-foreground mt-1">{subtitle}</p>
+    <div className="mb-3">
+      <h2 className="text-xl font-bold text-foreground">{title}</h2>
+      <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>
     </div>
   );
 }
