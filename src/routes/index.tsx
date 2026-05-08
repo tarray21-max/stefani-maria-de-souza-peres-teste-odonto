@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
 import { LayoutDashboard, HeartPulse, Briefcase, ShieldCheck, Building2 } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useChecklistStore } from "@/lib/use-checklist-store";
