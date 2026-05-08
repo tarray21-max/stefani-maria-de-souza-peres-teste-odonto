@@ -1,15 +1,17 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Answer, Category, ChecklistItem, Quality, ResponseMap } from "@/lib/checklist-data";
-import { Check, X, MinusCircle, Search, AlertTriangle, MessageSquare, ThumbsUp, ThumbsDown, Image as ImageIcon, Plus, Trash2, Pencil, EyeOff } from "lucide-react";
+import { Check, X, MinusCircle, Search, AlertTriangle, MessageSquare, ThumbsUp, ThumbsDown, Image as ImageIcon, Plus, Trash2, Pencil, EyeOff, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+interface ImageEntry { id: string; url: string; path: string }
 
 interface Props {
   category: Category;
@@ -20,6 +22,7 @@ interface Props {
   setJustification?: (id: string, value: string) => void;
   clientId: string | null;
   onItemsChange?: () => void;
+  imageUrlsFor?: (itemId: string) => ImageEntry[];
   readOnly?: boolean;
 }
 
@@ -29,7 +32,7 @@ const OPTIONS: { value: Answer; label: string; icon: typeof Check; activeClass: 
   { value: "na", label: "N/A", icon: MinusCircle, activeClass: "bg-muted-foreground text-white border-muted-foreground" },
 ];
 
-export function ChecklistSection({ category, items: allItems, answers, setAnswer, setQuality, setJustification, clientId, onItemsChange, readOnly }: Props) {
+export function ChecklistSection({ category, items: allItems, answers, setAnswer, setQuality, setJustification, clientId, onItemsChange, imageUrlsFor, readOnly }: Props) {
   const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
   const [imageItem, setImageItem] = useState<ChecklistItem | null>(null);
@@ -40,16 +43,23 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
 
   const ordered = useMemo(() => {
     const filtered = query ? items.filter((i) => i.title.toLowerCase().includes(query.toLowerCase())) : items;
-    return filtered
-      .map((it) => ({ it, isNa: answers[it.id]?.answer === "na" }))
-      .sort((a, b) => {
-        if (a.isNa !== b.isNa) return a.isNa ? 1 : -1;
-        return a.it.title.localeCompare(b.it.title, "pt-BR");
-      })
-      .map(({ it }) => it);
+    // priority: nao (top), null (middle), sim (middle), na (bottom)
+    const rank = (a: Answer | undefined) => {
+      if (a === "nao") return 0;
+      if (a === "na") return 2;
+      return 1;
+    };
+    return [...filtered].sort((a, b) => {
+      const ra = rank(answers[a.id]?.answer);
+      const rb = rank(answers[b.id]?.answer);
+      if (ra !== rb) return ra - rb;
+      if (ra === 0) return b.weight - a.weight; // heavier "Não" first
+      return a.title.localeCompare(b.title, "pt-BR");
+    });
   }, [items, answers, query]);
 
   const answered = items.filter((i) => answers[i.id]?.answer).length;
+  const naoCount = items.filter((i) => answers[i.id]?.answer === "nao").length;
 
   const handleHide = async (item: ChecklistItem) => {
     if (!clientId) return toast.error("Cadastre uma clínica para personalizar.");
@@ -70,6 +80,7 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs">
         <div className="text-muted-foreground">
           {items.length} itens • <span className="font-medium text-foreground">{answered} respondidos</span>
+          {naoCount > 0 && <span className="ml-2 text-danger font-medium">• {naoCount} não conformes no topo</span>}
         </div>
         <div className="flex items-center gap-2">
           <div className="relative w-full sm:w-64">
@@ -90,17 +101,33 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
           const current = resp?.answer ?? null;
           const quality = resp?.quality ?? null;
           const isNa = current === "na";
+          const isNao = current === "nao";
           const isSim = current === "sim";
           const isOpen = openId === item.id;
           const isCustom = item.id.startsWith("c_");
+          const imgs = imageUrlsFor?.(item.id) ?? [];
           return (
-            <li key={item.id} className={cn("transition-all", isNa && "opacity-40 hover:opacity-100")}>
+            <li
+              key={item.id}
+              className={cn(
+                "transition-all duration-300 ease-out",
+                isNa && "opacity-40 hover:opacity-100",
+                isNao && "bg-danger/5",
+              )}
+              style={{ order: idx }}
+            >
               <div className="flex items-center gap-2 px-3 py-1.5">
-                <span className="flex-shrink-0 w-5 h-5 rounded bg-primary/10 text-primary font-semibold flex items-center justify-center text-[10px]">
+                <span
+                  className={cn(
+                    "flex-shrink-0 w-5 h-5 rounded font-semibold flex items-center justify-center text-[10px]",
+                    isNao ? "bg-danger text-white" : "bg-primary/10 text-primary",
+                  )}
+                >
                   {idx + 1}
                 </span>
                 <button type="button" onClick={() => setImageItem(item)} className="flex-1 min-w-0 text-sm text-foreground leading-tight truncate text-left hover:text-primary" title={item.title}>
                   {item.title}
+                  {imgs.length > 0 && <span className="ml-1.5 inline-flex items-center text-[9px] text-primary/80"><ImageIcon className="w-3 h-3" /></span>}
                   {isCustom && <span className="ml-2 text-[9px] uppercase text-primary">custom</span>}
                 </button>
 
@@ -128,11 +155,9 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
 
                 {!readOnly && clientId && (
                   <>
-                    {isCustom && (
-                      <button type="button" title="Editar" onClick={() => setEditItem(item)} className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary">
-                        <Pencil className="w-3 h-3" />
-                      </button>
-                    )}
+                    <button type="button" title="Editar" onClick={() => setEditItem(item)} className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary">
+                      <Pencil className="w-3 h-3" />
+                    </button>
                     <button type="button" title={isCustom ? "Excluir" : "Ocultar"} onClick={() => handleHide(item)} className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-danger">
                       {isCustom ? <Trash2 className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
                     </button>
@@ -185,37 +210,97 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
         {ordered.length === 0 && <li className="px-3 py-6 text-center text-sm text-muted-foreground">Nenhum item encontrado.</li>}
       </ul>
 
-      {/* Reference image modal */}
-      <Dialog open={!!imageItem} onOpenChange={(o) => !o && setImageItem(null)}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{imageItem?.title}</DialogTitle></DialogHeader>
-          <div className="rounded-lg border border-dashed border-border bg-muted/40 aspect-video flex flex-col items-center justify-center text-center p-6">
-            <ImageIcon className="w-10 h-10 text-muted-foreground mb-3" />
-            <p className="text-sm text-muted-foreground">Imagem de referência ainda não cadastrada.</p>
-            {imageItem?.referencia && <p className="text-xs text-muted-foreground mt-2 italic max-w-md">{imageItem.referencia}</p>}
-          </div>
-          {imageItem?.norma && <p className="text-xs text-muted-foreground"><strong>Norma:</strong> {imageItem.norma}</p>}
-          {imageItem?.risco && <p className="text-xs text-muted-foreground"><strong>Risco:</strong> {imageItem.risco}</p>}
-        </DialogContent>
-      </Dialog>
-
+      <ItemImageDialog item={imageItem} onClose={() => setImageItem(null)} clientId={clientId} images={imageItem ? imageUrlsFor?.(imageItem.id) ?? [] : []} readOnly={readOnly} />
       <ItemFormDialog open={showAdd} onClose={() => setShowAdd(false)} category={category} clientId={clientId} onSaved={() => { setShowAdd(false); onItemsChange?.(); }} />
       <ItemFormDialog open={!!editItem} onClose={() => setEditItem(null)} category={category} clientId={clientId} item={editItem} onSaved={() => { setEditItem(null); onItemsChange?.(); }} />
     </div>
   );
 }
 
+function ItemImageDialog({ item, onClose, clientId, images, readOnly }: {
+  item: ChecklistItem | null; onClose: () => void; clientId: string | null; images: ImageEntry[]; readOnly?: boolean;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+
+  const upload = async (file: File) => {
+    if (!clientId || !item) return;
+    setBusy(true);
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${clientId}/${item.id}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("checklist-images").upload(path, file, { upsert: false });
+    if (error) { setBusy(false); return toast.error(error.message); }
+    const { error: dbErr } = await supabase.from("item_images").insert({ client_id: clientId, item_id: item.id, path });
+    setBusy(false);
+    if (dbErr) return toast.error(dbErr.message);
+    toast.success("Imagem enviada");
+  };
+
+  const remove = async (img: ImageEntry) => {
+    await supabase.storage.from("checklist-images").remove([img.path]);
+    await supabase.from("item_images").delete().eq("id", img.id);
+    toast.success("Imagem removida");
+  };
+
+  return (
+    <Dialog open={!!item} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader><DialogTitle>{item?.title}</DialogTitle></DialogHeader>
+        {images.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {images.map((img) => (
+              <div key={img.id} className="relative group aspect-video rounded-lg overflow-hidden border border-border bg-muted">
+                <img src={img.url} alt="Referência" className="w-full h-full object-cover" />
+                {!readOnly && clientId && (
+                  <button type="button" onClick={() => remove(img)} title="Remover" className="absolute top-1 right-1 w-6 h-6 rounded-full bg-background/90 text-destructive opacity-0 group-hover:opacity-100 flex items-center justify-center">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-lg border border-dashed border-border bg-muted/40 aspect-video flex flex-col items-center justify-center text-center p-6">
+            <ImageIcon className="w-10 h-10 text-muted-foreground mb-3" />
+            <p className="text-sm text-muted-foreground">Nenhuma imagem de referência ainda.</p>
+            {item?.referencia && <p className="text-xs text-muted-foreground mt-2 italic max-w-md">{item.referencia}</p>}
+          </div>
+        )}
+        {item?.norma && <p className="text-xs text-muted-foreground"><strong>Norma:</strong> {item.norma}</p>}
+        {item?.risco && <p className="text-xs text-muted-foreground"><strong>Risco:</strong> {item.risco}</p>}
+        {!readOnly && clientId && (
+          <DialogFooter>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) upload(f);
+                if (fileRef.current) fileRef.current.value = "";
+              }}
+            />
+            <Button onClick={() => fileRef.current?.click()} disabled={busy}>
+              <Upload className="w-3.5 h-3.5 mr-1" /> {busy ? "Enviando…" : "Adicionar imagem"}
+            </Button>
+          </DialogFooter>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ItemFormDialog({ open, onClose, category, clientId, item, onSaved }: {
   open: boolean; onClose: () => void; category: Category; clientId: string | null; item?: ChecklistItem | null; onSaved: () => void;
 }) {
-  const [title, setTitle] = useState(item?.title ?? "");
-  const [weight, setWeight] = useState(item?.weight ?? 5);
-  const [norma, setNorma] = useState(item?.norma ?? "");
-  const [risco, setRisco] = useState(item?.risco ?? "");
+  const [title, setTitle] = useState("");
+  const [weight, setWeight] = useState(5);
+  const [norma, setNorma] = useState("");
+  const [risco, setRisco] = useState("");
   const [busy, setBusy] = useState(false);
 
-  // reset on open
-  useMemo(() => {
+  useEffect(() => {
     if (open) {
       setTitle(item?.title ?? "");
       setWeight(item?.weight ?? 5);
@@ -228,11 +313,18 @@ function ItemFormDialog({ open, onClose, category, clientId, item, onSaved }: {
     if (!clientId) return toast.error("Cadastre uma clínica.");
     if (!title.trim()) return toast.error("Informe o título.");
     setBusy(true);
-    if (item?.id.startsWith("c_")) {
+    if (!item) {
+      // create new custom item
+      const { error } = await supabase.from("custom_items").insert({ client_id: clientId, category, title, weight, norma: norma || null, risco: risco || null });
+      if (error) { setBusy(false); return toast.error(error.message); }
+    } else if (item.id.startsWith("c_")) {
       const { error } = await supabase.from("custom_items").update({ title, weight, norma: norma || null, risco: risco || null }).eq("id", item.id.slice(2));
       if (error) { setBusy(false); return toast.error(error.message); }
     } else {
-      const { error } = await supabase.from("custom_items").insert({ client_id: clientId, category, title, weight, norma: norma || null, risco: risco || null });
+      // override built-in
+      const { error } = await supabase.from("item_overrides").upsert({
+        client_id: clientId, item_id: item.id, title, weight, norma: norma || null, risco: risco || null,
+      }, { onConflict: "client_id,item_id" });
       if (error) { setBusy(false); return toast.error(error.message); }
     }
     setBusy(false);
