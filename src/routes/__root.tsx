@@ -67,12 +67,15 @@ function RootShell({ children }: { children: React.ReactNode }) {
 import { AuthProvider } from "@/lib/auth-context";
 import { ClientProvider } from "@/lib/client-context";
 import { Toaster } from "@/components/ui/sonner";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 function RootComponent() {
   return (
     <AuthProvider>
       <ClientProvider>
-        <Outlet />
+        <SidebarProvider>
+          <Outlet />
+        </SidebarProvider>
         <Toaster richColors position="top-right" />
       </ClientProvider>
     </AuthProvider>

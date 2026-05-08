@@ -148,12 +148,71 @@ export type Database = {
         }
         Relationships: []
       }
+      item_images: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          item_id: string
+          path: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          item_id: string
+          path: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          path?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
+      item_overrides: {
+        Row: {
+          client_id: string
+          item_id: string
+          norma: string | null
+          risco: string | null
+          title: string | null
+          updated_at: string
+          weight: number | null
+        }
+        Insert: {
+          client_id: string
+          item_id: string
+          norma?: string | null
+          risco?: string | null
+          title?: string | null
+          updated_at?: string
+          weight?: number | null
+        }
+        Update: {
+          client_id?: string
+          item_id?: string
+          norma?: string | null
+          risco?: string | null
+          title?: string | null
+          updated_at?: string
+          weight?: number | null
+        }
+        Relationships: []
+      }
       monthly_snapshots: {
         Row: {
           client_id: string
           created_at: string
           id: string
+          is_baseline: boolean
           month: string
+          note: string | null
           score: number
           score_by_category: Json
           total_applicable: number
@@ -165,7 +224,9 @@ export type Database = {
           client_id: string
           created_at?: string
           id?: string
+          is_baseline?: boolean
           month: string
+          note?: string | null
           score: number
           score_by_category?: Json
           total_applicable?: number
@@ -177,7 +238,9 @@ export type Database = {
           client_id?: string
           created_at?: string
           id?: string
+          is_baseline?: boolean
           month?: string
+          note?: string | null
           score?: number
           score_by_category?: Json
           total_applicable?: number
