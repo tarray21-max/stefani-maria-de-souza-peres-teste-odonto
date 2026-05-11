@@ -1,18 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { LayoutDashboard, HeartPulse, Briefcase, ShieldCheck, Building2 } from "lucide-react";
+import { LayoutDashboard, FileText, Building, Wrench, SprayCan, Boxes, Building2 } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useChecklistStore } from "@/lib/use-checklist-store";
 import { useItems } from "@/lib/use-items";
 import { Dashboard } from "@/components/Dashboard";
 import { ChecklistSection } from "@/components/ChecklistSection";
-import { ServiceMatrix } from "@/components/ServiceMatrix";
 import { ResetButton } from "@/components/ResetButton";
 import { EvolutionTimeline } from "@/components/EvolutionTimeline";
 import { VisitorLinks } from "@/components/VisitorLinks";
 import { ClientSidebar } from "@/components/ClientSidebar";
-import { computeMaturity, scoreColorVar } from "@/lib/checklist-data";
+import { CATEGORIES, computeMaturity, scoreColorVar, type Category } from "@/lib/checklist-data";
 import { useAuth } from "@/lib/auth-context";
 import { useClients } from "@/lib/client-context";
 
