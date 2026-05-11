@@ -59,7 +59,7 @@ export function Dashboard({ answers, items }: Props) {
         })}
       </div>
 
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {perCategory.map((c) => (
           <Card key={c.id} className="p-6 border-border/60">
             <div className="flex items-center justify-between mb-3">
