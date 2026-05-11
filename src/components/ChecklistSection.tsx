@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Answer, Category, ChecklistItem, Quality, ResponseMap } from "@/lib/checklist-data";
-import { Check, X, MinusCircle, Search, AlertTriangle, MessageSquare, ThumbsUp, ThumbsDown, Image as ImageIcon, Plus, Trash2, Pencil, EyeOff, Upload } from "lucide-react";
+import { Check, X, MinusCircle, Search, AlertTriangle, MessageSquare, ThumbsUp, ThumbsDown, Image as ImageIcon, Plus, Trash2, Pencil, Upload, Eraser } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -26,7 +27,7 @@ interface Props {
   readOnly?: boolean;
 }
 
-const OPTIONS: { value: Answer; label: string; icon: typeof Check; activeClass: string }[] = [
+const OPTIONS: { value: Exclude<Answer, null>; label: string; icon: typeof Check; activeClass: string }[] = [
   { value: "sim", label: "Sim", icon: Check, activeClass: "bg-success text-white border-success" },
   { value: "nao", label: "Não", icon: X, activeClass: "bg-danger text-white border-danger" },
   { value: "na", label: "N/A", icon: MinusCircle, activeClass: "bg-muted-foreground text-white border-muted-foreground" },
@@ -38,12 +39,12 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
   const [imageItem, setImageItem] = useState<ChecklistItem | null>(null);
   const [editItem, setEditItem] = useState<ChecklistItem | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [deleteItem, setDeleteItem] = useState<ChecklistItem | null>(null);
 
-  const items = useMemo(() => allItems.filter((i) => i.category === category && !i.matrix), [allItems, category]);
+  const items = useMemo(() => allItems.filter((i) => i.category === category), [allItems, category]);
 
   const ordered = useMemo(() => {
     const filtered = query ? items.filter((i) => i.title.toLowerCase().includes(query.toLowerCase())) : items;
-    // priority: nao (top), null (middle), sim (middle), na (bottom)
     const rank = (a: Answer | undefined) => {
       if (a === "nao") return 0;
       if (a === "na") return 2;
@@ -53,7 +54,7 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
       const ra = rank(answers[a.id]?.answer);
       const rb = rank(answers[b.id]?.answer);
       if (ra !== rb) return ra - rb;
-      if (ra === 0) return b.weight - a.weight; // heavier "Não" first
+      if (ra === 0) return b.weight - a.weight;
       return a.title.localeCompare(b.title, "pt-BR");
     });
   }, [items, answers, query]);
@@ -61,17 +62,28 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
   const answered = items.filter((i) => answers[i.id]?.answer).length;
   const naoCount = items.filter((i) => answers[i.id]?.answer === "nao").length;
 
-  const handleHide = async (item: ChecklistItem) => {
-    if (!clientId) return toast.error("Cadastre uma clínica para personalizar.");
+  const handleClickOption = (id: string, value: Exclude<Answer, null>) => {
+    const current = answers[id]?.answer;
+    setAnswer(id, current === value ? null : value);
+  };
+
+  const handleClear = (id: string) => {
+    setAnswer(id, null);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteItem || !clientId) return;
+    const item = deleteItem;
+    setDeleteItem(null);
     if (item.id.startsWith("c_")) {
       const { error } = await supabase.from("custom_items").delete().eq("id", item.id.slice(2));
       if (error) return toast.error(error.message);
-      toast.success("Item excluído");
     } else {
       const { error } = await supabase.from("disabled_items").insert({ client_id: clientId, item_id: item.id });
       if (error) return toast.error(error.message);
-      toast.success("Item ocultado");
     }
+    await supabase.from("responses").delete().eq("client_id", clientId).eq("item_id", item.id);
+    toast.success("Pergunta excluída");
     onItemsChange?.();
   };
 
@@ -119,9 +131,10 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
               <div className="flex items-center gap-2 px-3 py-1.5">
                 <span
                   className={cn(
-                    "flex-shrink-0 w-5 h-5 rounded font-semibold flex items-center justify-center text-[10px]",
+                    "flex-shrink-0 w-6 h-5 rounded font-semibold flex items-center justify-center text-[10px]",
                     isNao ? "bg-danger text-white" : "bg-primary/10 text-primary",
                   )}
+                  title="Posição neste grupo"
                 >
                   {idx + 1}
                 </span>
@@ -131,22 +144,36 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
                   {isCustom && <span className="ml-2 text-[9px] uppercase text-primary">custom</span>}
                 </button>
 
-                {item.norma && (
+                {(item.norma || item.penalidade || item.observacao) && (
                   <Popover>
                     <PopoverTrigger asChild>
-                      <button type="button" title="Ver norma e risco" className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-amber-600 hover:bg-amber-500/10">
+                      <button type="button" title="Ver norma, observação e penalidade" className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-amber-600 hover:bg-amber-500/10">
                         <AlertTriangle className="w-3.5 h-3.5" />
                       </button>
                     </PopoverTrigger>
                     <PopoverContent className="w-80 text-xs space-y-2" side="left">
-                      <div>
-                        <div className="font-semibold text-foreground mb-1">Norma técnica</div>
-                        <p className="text-muted-foreground">{item.norma}</p>
-                      </div>
+                      {item.norma && (
+                        <div>
+                          <div className="font-semibold text-foreground mb-1">Norma técnica</div>
+                          <p className="text-muted-foreground whitespace-pre-wrap">{item.norma}</p>
+                        </div>
+                      )}
+                      {item.observacao && (
+                        <div>
+                          <div className="font-semibold text-foreground mb-1">Observação</div>
+                          <p className="text-muted-foreground whitespace-pre-wrap">{item.observacao}</p>
+                        </div>
+                      )}
+                      {item.penalidade && (
+                        <div>
+                          <div className="font-semibold text-danger mb-1">Penalidade</div>
+                          <p className="text-muted-foreground whitespace-pre-wrap">{item.penalidade}</p>
+                        </div>
+                      )}
                       {item.risco && (
                         <div>
                           <div className="font-semibold text-danger mb-1">Consequência</div>
-                          <p className="text-muted-foreground">{item.risco}</p>
+                          <p className="text-muted-foreground whitespace-pre-wrap">{item.risco}</p>
                         </div>
                       )}
                     </PopoverContent>
@@ -155,11 +182,11 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
 
                 {!readOnly && clientId && (
                   <>
-                    <button type="button" title="Editar" onClick={() => setEditItem(item)} className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary">
+                    <button type="button" title="Editar pergunta" onClick={() => setEditItem(item)} className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary">
                       <Pencil className="w-3 h-3" />
                     </button>
-                    <button type="button" title={isCustom ? "Excluir" : "Ocultar"} onClick={() => handleHide(item)} className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-danger">
-                      {isCustom ? <Trash2 className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                    <button type="button" title="Excluir pergunta permanentemente" onClick={() => setDeleteItem(item)} className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-danger">
+                      <Trash2 className="w-3 h-3" />
                     </button>
                   </>
                 )}
@@ -189,7 +216,8 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
                     const Icon = opt.icon;
                     const active = current === opt.value;
                     return (
-                      <button key={opt.value} type="button" onClick={() => setAnswer(item.id, opt.value)}
+                      <button key={opt.value} type="button" onClick={() => !readOnly && handleClickOption(item.id, opt.value)}
+                        title={active ? `${opt.label} (clique para desmarcar)` : opt.label}
                         className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] font-medium transition-all border-border bg-background hover:border-primary/40", active && opt.activeClass)}>
                         <Icon className="w-3 h-3" />
                         {opt.label}
@@ -197,6 +225,21 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
                     );
                   })}
                 </div>
+
+                {!readOnly && (
+                  <button
+                    type="button"
+                    title="Limpar resposta deste item"
+                    onClick={() => handleClear(item.id)}
+                    disabled={!current}
+                    className={cn(
+                      "flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded border text-[10px] border-border bg-background transition-opacity",
+                      current ? "text-muted-foreground hover:text-danger hover:border-danger/40" : "opacity-30 cursor-not-allowed",
+                    )}
+                  >
+                    <Eraser className="w-3 h-3" />
+                  </button>
+                )}
               </div>
 
               {isOpen && setJustification && (
@@ -213,6 +256,25 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
       <ItemImageDialog item={imageItem} onClose={() => setImageItem(null)} clientId={clientId} images={imageItem ? imageUrlsFor?.(imageItem.id) ?? [] : []} readOnly={readOnly} />
       <ItemFormDialog open={showAdd} onClose={() => setShowAdd(false)} category={category} clientId={clientId} onSaved={() => { setShowAdd(false); onItemsChange?.(); }} />
       <ItemFormDialog open={!!editItem} onClose={() => setEditItem(null)} category={category} clientId={clientId} item={editItem} onSaved={() => { setEditItem(null); onItemsChange?.(); }} />
+
+      <AlertDialog open={!!deleteItem} onOpenChange={(o) => !o && setDeleteItem(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir pergunta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza de que deseja excluir permanentemente esta pergunta do seu checklist? Esta ação não pode ser desfeita.
+              <br /><br />
+              <span className="font-medium text-foreground">{deleteItem?.title}</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-danger text-white hover:bg-danger/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -267,6 +329,8 @@ function ItemImageDialog({ item, onClose, clientId, images, readOnly }: {
           </div>
         )}
         {item?.norma && <p className="text-xs text-muted-foreground"><strong>Norma:</strong> {item.norma}</p>}
+        {item?.observacao && <p className="text-xs text-muted-foreground"><strong>Observação:</strong> {item.observacao}</p>}
+        {item?.penalidade && <p className="text-xs text-muted-foreground"><strong>Penalidade:</strong> {item.penalidade}</p>}
         {item?.risco && <p className="text-xs text-muted-foreground"><strong>Risco:</strong> {item.risco}</p>}
         {!readOnly && clientId && (
           <DialogFooter>
@@ -295,17 +359,19 @@ function ItemFormDialog({ open, onClose, category, clientId, item, onSaved }: {
   open: boolean; onClose: () => void; category: Category; clientId: string | null; item?: ChecklistItem | null; onSaved: () => void;
 }) {
   const [title, setTitle] = useState("");
-  const [weight, setWeight] = useState(5);
+  const [weight, setWeight] = useState(6);
   const [norma, setNorma] = useState("");
-  const [risco, setRisco] = useState("");
+  const [observacao, setObservacao] = useState("");
+  const [penalidade, setPenalidade] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (open) {
       setTitle(item?.title ?? "");
-      setWeight(item?.weight ?? 5);
+      setWeight(item?.weight ?? 6);
       setNorma(item?.norma ?? "");
-      setRisco(item?.risco ?? "");
+      setObservacao(item?.observacao ?? "");
+      setPenalidade(item?.penalidade ?? "");
     }
   }, [open, item]);
 
@@ -314,16 +380,14 @@ function ItemFormDialog({ open, onClose, category, clientId, item, onSaved }: {
     if (!title.trim()) return toast.error("Informe o título.");
     setBusy(true);
     if (!item) {
-      // create new custom item
-      const { error } = await supabase.from("custom_items").insert({ client_id: clientId, category, title, weight, norma: norma || null, risco: risco || null });
+      const { error } = await supabase.from("custom_items").insert({ client_id: clientId, category, title, weight, norma: norma || null, observacao: observacao || null, penalidade: penalidade || null });
       if (error) { setBusy(false); return toast.error(error.message); }
     } else if (item.id.startsWith("c_")) {
-      const { error } = await supabase.from("custom_items").update({ title, weight, norma: norma || null, risco: risco || null }).eq("id", item.id.slice(2));
+      const { error } = await supabase.from("custom_items").update({ title, weight, norma: norma || null, observacao: observacao || null, penalidade: penalidade || null }).eq("id", item.id.slice(2));
       if (error) { setBusy(false); return toast.error(error.message); }
     } else {
-      // override built-in
       const { error } = await supabase.from("item_overrides").upsert({
-        client_id: clientId, item_id: item.id, title, weight, norma: norma || null, risco: risco || null,
+        client_id: clientId, item_id: item.id, title, weight, norma: norma || null, observacao: observacao || null, penalidade: penalidade || null,
       }, { onConflict: "client_id,item_id" });
       if (error) { setBusy(false); return toast.error(error.message); }
     }
@@ -337,10 +401,11 @@ function ItemFormDialog({ open, onClose, category, clientId, item, onSaved }: {
       <DialogContent>
         <DialogHeader><DialogTitle>{item ? "Editar requisito" : "Novo requisito"}</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <div><Label>Título</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} /></div>
+          <div><Label>Descrição</Label><Textarea value={title} onChange={(e) => setTitle(e.target.value)} rows={2} /></div>
           <div><Label>Peso (1-10)</Label><Input type="number" min={1} max={10} value={weight} onChange={(e) => setWeight(Number(e.target.value))} /></div>
-          <div><Label>Norma técnica</Label><Input value={norma} onChange={(e) => setNorma(e.target.value)} /></div>
-          <div><Label>Risco / consequência</Label><Textarea value={risco} onChange={(e) => setRisco(e.target.value)} rows={3} /></div>
+          <div><Label>Norma</Label><Textarea value={norma} onChange={(e) => setNorma(e.target.value)} rows={2} /></div>
+          <div><Label>Observação</Label><Textarea value={observacao} onChange={(e) => setObservacao(e.target.value)} rows={2} /></div>
+          <div><Label>Penalidade</Label><Textarea value={penalidade} onChange={(e) => setPenalidade(e.target.value)} rows={2} /></div>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>Cancelar</Button>

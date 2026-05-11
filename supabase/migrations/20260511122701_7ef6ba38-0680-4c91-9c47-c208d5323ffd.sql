@@ -1,0 +1,2 @@
+ALTER TABLE public.custom_items ADD COLUMN IF NOT EXISTS observacao text, ADD COLUMN IF NOT EXISTS penalidade text;
+ALTER TABLE public.item_overrides ADD COLUMN IF NOT EXISTS observacao text, ADD COLUMN IF NOT EXISTS penalidade text;

@@ -9,6 +9,8 @@ export interface CustomItemRow {
   title: string;
   weight: number;
   norma: string | null;
+  observacao: string | null;
+  penalidade: string | null;
   risco: string | null;
 }
 
@@ -18,6 +20,8 @@ export interface ItemOverrideRow {
   title: string | null;
   weight: number | null;
   norma: string | null;
+  observacao: string | null;
+  penalidade: string | null;
   risco: string | null;
 }
 
@@ -48,10 +52,10 @@ export function useItems(clientId: string | null) {
       supabase.from("item_overrides").select("*").eq("client_id", clientId),
       supabase.from("item_images").select("*").eq("client_id", clientId).order("created_at", { ascending: false }),
     ]);
-    setCustom((c.data ?? []) as CustomItemRow[]);
+    setCustom((c.data ?? []) as unknown as CustomItemRow[]);
     setDisabled(new Set((d.data ?? []).map((r: { item_id: string }) => r.item_id)));
     const ov: Record<string, ItemOverrideRow> = {};
-    for (const row of (o.data ?? []) as ItemOverrideRow[]) ov[row.item_id] = row;
+    for (const row of (o.data ?? []) as unknown as ItemOverrideRow[]) ov[row.item_id] = row;
     setOverrides(ov);
     const imap: Record<string, ItemImageRow[]> = {};
     for (const row of (im.data ?? []) as ItemImageRow[]) {
@@ -83,6 +87,8 @@ export function useItems(clientId: string | null) {
       title: ov.title ?? it.title,
       weight: ov.weight ?? it.weight,
       norma: ov.norma ?? it.norma,
+      observacao: ov.observacao ?? it.observacao,
+      penalidade: ov.penalidade ?? it.penalidade,
       risco: ov.risco ?? it.risco,
     };
   };
@@ -96,6 +102,8 @@ export function useItems(clientId: string | null) {
       description: "",
       weight: c.weight,
       norma: c.norma ?? undefined,
+      observacao: c.observacao ?? undefined,
+      penalidade: c.penalidade ?? undefined,
       risco: c.risco ?? undefined,
     })),
   ];

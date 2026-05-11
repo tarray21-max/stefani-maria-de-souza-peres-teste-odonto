@@ -1,18 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { LayoutDashboard, HeartPulse, Briefcase, ShieldCheck, Building2 } from "lucide-react";
+import { LayoutDashboard, FileText, Building, Wrench, SprayCan, Boxes, Building2 } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useChecklistStore } from "@/lib/use-checklist-store";
 import { useItems } from "@/lib/use-items";
 import { Dashboard } from "@/components/Dashboard";
 import { ChecklistSection } from "@/components/ChecklistSection";
-import { ServiceMatrix } from "@/components/ServiceMatrix";
 import { ResetButton } from "@/components/ResetButton";
 import { EvolutionTimeline } from "@/components/EvolutionTimeline";
 import { VisitorLinks } from "@/components/VisitorLinks";
 import { ClientSidebar } from "@/components/ClientSidebar";
-import { computeMaturity, scoreColorVar } from "@/lib/checklist-data";
+import { CATEGORIES, computeMaturity, scoreColorVar, type Category } from "@/lib/checklist-data";
 import { useAuth } from "@/lib/auth-context";
 import { useClients } from "@/lib/client-context";
 
@@ -26,12 +25,13 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const TABS = [
-  { id: "dashboard", label: "Painel", icon: LayoutDashboard },
-  { id: "assistencial", label: "Assistencial", icon: HeartPulse },
-  { id: "trabalhista", label: "Pessoas e Parcerias", icon: Briefcase },
-  { id: "sanitaria", label: "Sanitária", icon: ShieldCheck },
-] as const;
+const TAB_ICONS: Record<Category, typeof FileText> = {
+  documentacao: FileText,
+  infraestrutura: Building,
+  procedimentos: Wrench,
+  higienizacao: SprayCan,
+  cme: Boxes,
+};
 
 function Index() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -118,13 +118,17 @@ function ClientWorkspace({ clientId }: { clientId: string }) {
       </div>
 
       <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="w-full h-auto p-1 bg-muted/60 grid grid-cols-2 md:grid-cols-4 gap-1">
-          {TABS.map((t) => {
-            const Icon = t.icon;
+        <TabsList className="w-full h-auto p-1 bg-muted/60 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1">
+          <TabsTrigger value="dashboard" className="flex items-center gap-2 py-2 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+            <LayoutDashboard className="w-4 h-4" />
+            <span className="text-sm">Painel</span>
+          </TabsTrigger>
+          {CATEGORIES.map((c) => {
+            const Icon = TAB_ICONS[c.id];
             return (
-              <TabsTrigger key={t.id} value={t.id} className="flex items-center gap-2 py-2 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+              <TabsTrigger key={c.id} value={c.id} className="flex items-center gap-2 py-2 data-[state=active]:bg-card data-[state=active]:shadow-sm">
                 <Icon className="w-4 h-4" />
-                <span className="text-sm">{t.label}</span>
+                <span className="text-sm">{c.short}</span>
               </TabsTrigger>
             );
           })}
@@ -135,26 +139,12 @@ function ClientWorkspace({ clientId }: { clientId: string }) {
           <EvolutionTimeline clientId={clientId} answers={answers} items={items} />
         </TabsContent>
 
-        <TabsContent value="assistencial" className="mt-5 space-y-6">
-          <div>
-            <SectionHeader title="Combo Assistencial: Blindagem Jurídica" subtitle="Documentação geral da relação com o paciente." />
-            <ChecklistSection category="assistencial" items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} />
-          </div>
-          <div>
-            <SectionHeader title="TCLE & POP por Serviço" subtitle="Matriz compacta: marque a existência de TCLE e POP para cada procedimento." />
-            <ServiceMatrix answers={answers} setAnswer={setAnswer} />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="trabalhista" className="mt-5">
-          <SectionHeader title="Combo Pessoas e Parcerias" subtitle="Blindagem da equipe, contratos, LGPD e saúde ocupacional." />
-          <ChecklistSection category="trabalhista" items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} />
-        </TabsContent>
-
-        <TabsContent value="sanitaria" className="mt-5">
-          <SectionHeader title="Combo Vigilância Sanitária e Infraestrutura" subtitle="Alvarás, PGRSS, CME, infraestrutura e segurança sanitária." />
-          <ChecklistSection category="sanitaria" items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} />
-        </TabsContent>
+        {CATEGORIES.map((c) => (
+          <TabsContent key={c.id} value={c.id} className="mt-5">
+            <SectionHeader title={c.label} subtitle={`${items.filter((i) => i.category === c.id).length} requisitos neste grupo.`} />
+            <ChecklistSection category={c.id} items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} />
+          </TabsContent>
+        ))}
       </Tabs>
 
       <footer className="mt-10 text-center text-xs text-muted-foreground">
