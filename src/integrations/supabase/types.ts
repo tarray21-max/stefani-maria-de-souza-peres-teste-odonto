@@ -99,6 +99,8 @@ export type Database = {
           created_by: string | null
           id: string
           norma: string | null
+          observacao: string | null
+          penalidade: string | null
           risco: string | null
           title: string
           updated_at: string
@@ -111,6 +113,8 @@ export type Database = {
           created_by?: string | null
           id?: string
           norma?: string | null
+          observacao?: string | null
+          penalidade?: string | null
           risco?: string | null
           title: string
           updated_at?: string
@@ -123,6 +127,8 @@ export type Database = {
           created_by?: string | null
           id?: string
           norma?: string | null
+          observacao?: string | null
+          penalidade?: string | null
           risco?: string | null
           title?: string
           updated_at?: string
@@ -180,6 +186,8 @@ export type Database = {
           client_id: string
           item_id: string
           norma: string | null
+          observacao: string | null
+          penalidade: string | null
           risco: string | null
           title: string | null
           updated_at: string
@@ -189,6 +197,8 @@ export type Database = {
           client_id: string
           item_id: string
           norma?: string | null
+          observacao?: string | null
+          penalidade?: string | null
           risco?: string | null
           title?: string | null
           updated_at?: string
@@ -198,6 +208,8 @@ export type Database = {
           client_id?: string
           item_id?: string
           norma?: string | null
+          observacao?: string | null
+          penalidade?: string | null
           risco?: string | null
           title?: string | null
           updated_at?: string
