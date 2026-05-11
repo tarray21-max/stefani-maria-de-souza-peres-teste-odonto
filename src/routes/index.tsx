@@ -25,12 +25,13 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const TABS = [
-  { id: "dashboard", label: "Painel", icon: LayoutDashboard },
-  { id: "assistencial", label: "Assistencial", icon: HeartPulse },
-  { id: "trabalhista", label: "Pessoas e Parcerias", icon: Briefcase },
-  { id: "sanitaria", label: "Sanitária", icon: ShieldCheck },
-] as const;
+const TAB_ICONS: Record<Category, typeof FileText> = {
+  documentacao: FileText,
+  infraestrutura: Building,
+  procedimentos: Wrench,
+  higienizacao: SprayCan,
+  cme: Boxes,
+};
 
 function Index() {
   const { user, loading: authLoading, signOut } = useAuth();
