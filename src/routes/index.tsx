@@ -144,7 +144,7 @@ function ClientWorkspace({ clientId }: { clientId: string }) {
         {CATEGORIES.map((c) => (
           <TabsContent key={c.id} value={c.id} className="mt-5">
             <SectionHeader title={c.label} subtitle={`${items.filter((i) => i.category === c.id).length} requisitos neste grupo.`} />
-            <ChecklistSection category={c.id} items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} />
+            <ChecklistSection category={c.id} items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} positions={positions} reorderCategory={reorderCategory} />
             {c.id === "documentacao" && (
               <ServiceMatrix answers={answers} setAnswer={setAnswer} />
             )}
