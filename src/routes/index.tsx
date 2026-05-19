@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { LayoutDashboard, FileText, Building, Wrench, SprayCan, Boxes, Building2 } from "lucide-react";
+import { LayoutDashboard, FileText, Building, Wrench, SprayCan, Boxes, Building2, Sun, Moon } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useChecklistStore } from "@/lib/use-checklist-store";
 import { useItems } from "@/lib/use-items";
@@ -34,6 +34,31 @@ const TAB_ICONS: Record<Category, typeof FileText> = {
   cme: Boxes,
 };
 
+function ThemeToggle() {
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const saved = localStorage.getItem("theme");
+    if (saved) return saved === "dark";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  });
+  const toggle = () => {
+    const next = !isDark;
+    setIsDark(next);
+    localStorage.setItem("theme", next ? "dark" : "light");
+    document.documentElement.classList.toggle("dark", next);
+  };
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+      title={isDark ? "Modo claro" : "Modo escuro"}
+    >
+      {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+    </button>
+  );
+}
+
 function Index() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { clients, current } = useClients();
@@ -65,6 +90,7 @@ function Index() {
               </div>
             )}
           </div>
+          <ThemeToggle />
         </header>
 
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-5">

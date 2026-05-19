@@ -1,4 +1,4 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouter } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
 
@@ -52,7 +52,7 @@ export const Route = createRootRoute({
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <head>
         <HeadContent />
       </head>
@@ -68,8 +68,19 @@ import { AuthProvider } from "@/lib/auth-context";
 import { ClientProvider } from "@/lib/client-context";
 import { Toaster } from "@/components/ui/sonner";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { useEffect } from "react";
+
+function applyTheme() {
+  const saved = typeof window !== "undefined" ? localStorage.getItem("theme") : null;
+  const prefersDark = typeof window !== "undefined" ? window.matchMedia("(prefers-color-scheme: dark)").matches : false;
+  const isDark = saved ? saved === "dark" : prefersDark;
+  document.documentElement.classList.toggle("dark", isDark);
+}
 
 function RootComponent() {
+  useEffect(() => {
+    applyTheme();
+  }, []);
   return (
     <AuthProvider>
       <ClientProvider>
