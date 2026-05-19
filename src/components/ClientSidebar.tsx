@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useClients, type ClientRow } from "@/lib/client-context";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
+import { formatCNPJ, formatPhone } from "@/lib/format";
 import { toast } from "sonner";
 import { Building2, Plus, Pencil, Trash2, LogOut, Stethoscope } from "lucide-react";
 
