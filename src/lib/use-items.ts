@@ -32,6 +32,12 @@ export interface ItemImageRow {
   path: string;
 }
 
+export interface ItemPositionRow {
+  client_id: string;
+  item_id: string;
+  position: number;
+}
+
 const PUBLIC_URL = (path: string) => supabase.storage.from("checklist-images").getPublicUrl(path).data.publicUrl;
 
 export function useItems(clientId: string | null) {
@@ -39,18 +45,20 @@ export function useItems(clientId: string | null) {
   const [overrides, setOverrides] = useState<Record<string, ItemOverrideRow>>({});
   const [images, setImages] = useState<Record<string, ItemImageRow[]>>({});
   const [disabled, setDisabled] = useState<Set<string>>(new Set());
+  const [positions, setPositions] = useState<Record<string, number>>({});
   const [loaded, setLoaded] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!clientId) {
-      setCustom([]); setDisabled(new Set()); setOverrides({}); setImages({}); setLoaded(true);
+      setCustom([]); setDisabled(new Set()); setOverrides({}); setImages({}); setPositions({}); setLoaded(true);
       return;
     }
-    const [c, d, o, im] = await Promise.all([
+    const [c, d, o, im, pos] = await Promise.all([
       supabase.from("custom_items").select("*").eq("client_id", clientId),
       supabase.from("disabled_items").select("item_id").eq("client_id", clientId),
       supabase.from("item_overrides").select("*").eq("client_id", clientId),
       supabase.from("item_images").select("*").eq("client_id", clientId).order("created_at", { ascending: false }),
+      supabase.from("item_positions").select("item_id, position").eq("client_id", clientId),
     ]);
     setCustom((c.data ?? []) as unknown as CustomItemRow[]);
     setDisabled(new Set((d.data ?? []).map((r: { item_id: string }) => r.item_id)));
@@ -63,6 +71,11 @@ export function useItems(clientId: string | null) {
       imap[row.item_id].push(row);
     }
     setImages(imap);
+    const pmap: Record<string, number> = {};
+    for (const row of ((pos as { data: { item_id: string; position: number }[] | null }).data ?? [])) {
+      pmap[row.item_id] = row.position;
+    }
+    setPositions(pmap);
     setLoaded(true);
   }, [clientId]);
 
@@ -75,6 +88,7 @@ export function useItems(clientId: string | null) {
       .on("postgres_changes", { event: "*", schema: "public", table: "disabled_items", filter: `client_id=eq.${clientId}` }, () => refresh())
       .on("postgres_changes", { event: "*", schema: "public", table: "item_overrides", filter: `client_id=eq.${clientId}` }, () => refresh())
       .on("postgres_changes", { event: "*", schema: "public", table: "item_images", filter: `client_id=eq.${clientId}` }, () => refresh())
+      .on("postgres_changes", { event: "*", schema: "public", table: "item_positions", filter: `client_id=eq.${clientId}` }, () => refresh())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [clientId, refresh]);
@@ -111,5 +125,26 @@ export function useItems(clientId: string | null) {
   const imageUrlsFor = (itemId: string): { id: string; url: string; path: string }[] =>
     (images[itemId] ?? []).map((r) => ({ id: r.id, path: r.path, url: PUBLIC_URL(r.path) }));
 
-  return { items, custom, disabled, overrides, images, loaded, refresh, imageUrlsFor };
+  /** Reordena uma categoria persistindo posições explícitas no banco. */
+  const reorderCategory = useCallback(
+    async (categoryItems: ChecklistItem[]) => {
+      if (!clientId) return;
+      const rows = categoryItems.map((it, idx) => ({
+        client_id: clientId,
+        item_id: it.id,
+        position: idx,
+      }));
+      // Otimista
+      setPositions((prev) => {
+        const next = { ...prev };
+        for (const r of rows) next[r.item_id] = r.position;
+        return next;
+      });
+      const { error } = await supabase.from("item_positions").upsert(rows, { onConflict: "client_id,item_id" });
+      if (error) console.error("[item_positions] upsert", error);
+    },
+    [clientId],
+  );
+
+  return { items, custom, disabled, overrides, images, positions, loaded, refresh, imageUrlsFor, reorderCategory };
 }

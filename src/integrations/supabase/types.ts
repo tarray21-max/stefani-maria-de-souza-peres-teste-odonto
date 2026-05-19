@@ -217,6 +217,27 @@ export type Database = {
         }
         Relationships: []
       }
+      item_positions: {
+        Row: {
+          client_id: string
+          item_id: string
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          item_id: string
+          position: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          item_id?: string
+          position?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       monthly_snapshots: {
         Row: {
           client_id: string

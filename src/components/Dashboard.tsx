@@ -1,5 +1,6 @@
 import { CATEGORIES, computeMaturity, scoreColorVar, type ChecklistItem, type ResponseMap } from "@/lib/checklist-data";
 import type { ClientRow } from "@/lib/client-context";
+import { formatCNPJ, formatPhone } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ToothGauge } from "./ToothGauge";
@@ -40,9 +41,9 @@ export function Dashboard({ answers, items, client }: Props) {
     ? [
         { icon: User, label: "Responsável Técnico", value: client.profissional_responsavel },
         { icon: Stethoscope, label: "Especialidade", value: client.especialidade },
-        { icon: Hash, label: "CNPJ", value: client.cnpj },
+        { icon: Hash, label: "CNPJ", value: formatCNPJ(client.cnpj) },
         { icon: Briefcase, label: "Contrato", value: CONTRATO_LABEL[client.tipo_contrato] },
-        { icon: Phone, label: "Telefone", value: client.telefone },
+        { icon: Phone, label: "Telefone", value: formatPhone(client.telefone) },
         { icon: MapPin, label: "Endereço", value: client.endereco },
       ].filter((i) => i.value && String(i.value).trim().length > 0)
     : [];

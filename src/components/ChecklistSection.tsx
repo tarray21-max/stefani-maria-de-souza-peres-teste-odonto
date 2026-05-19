@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Answer, Category, ChecklistItem, Quality, ResponseMap } from "@/lib/checklist-data";
-import { Check, X, MinusCircle, Search, AlertTriangle, MessageSquare, ThumbsUp, ThumbsDown, Image as ImageIcon, Plus, Trash2, Pencil, Upload, Eraser } from "lucide-react";
+import { Check, X, MinusCircle, Search, AlertTriangle, MessageSquare, Image as ImageIcon, Plus, Trash2, Pencil, Upload, Eraser, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,6 +24,8 @@ interface Props {
   clientId: string | null;
   onItemsChange?: () => void;
   imageUrlsFor?: (itemId: string) => ImageEntry[];
+  positions?: Record<string, number>;
+  reorderCategory?: (orderedItems: ChecklistItem[]) => Promise<void> | void;
   readOnly?: boolean;
 }
 
@@ -33,18 +35,36 @@ const OPTIONS: { value: Exclude<Answer, null>; label: string; icon: typeof Check
   { value: "na", label: "N/A", icon: MinusCircle, activeClass: "bg-muted-foreground text-white border-muted-foreground" },
 ];
 
-export function ChecklistSection({ category, items: allItems, answers, setAnswer, setQuality, setJustification, clientId, onItemsChange, imageUrlsFor, readOnly }: Props) {
+export function ChecklistSection({ category, items: allItems, answers, setAnswer, setQuality, setJustification, clientId, onItemsChange, imageUrlsFor, positions, reorderCategory, readOnly }: Props) {
   const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
   const [imageItem, setImageItem] = useState<ChecklistItem | null>(null);
   const [editItem, setEditItem] = useState<ChecklistItem | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [deleteItem, setDeleteItem] = useState<ChecklistItem | null>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
 
   const items = useMemo(() => allItems.filter((i) => i.category === category), [allItems, category]);
 
+  // Se houver qualquer posição manual nesta categoria, respeita-a;
+  // caso contrário, aplica a ordenação automática (Não no topo, N/A no fim).
+  const hasManual = useMemo(
+    () => items.some((i) => positions && i.id in positions),
+    [items, positions],
+  );
+
   const ordered = useMemo(() => {
     const filtered = query ? items.filter((i) => i.title.toLowerCase().includes(query.toLowerCase())) : items;
+    if (hasManual && positions) {
+      const POS = (id: string) => (id in positions ? positions[id] : Number.MAX_SAFE_INTEGER);
+      return [...filtered].sort((a, b) => {
+        const pa = POS(a.id);
+        const pb = POS(b.id);
+        if (pa !== pb) return pa - pb;
+        return a.title.localeCompare(b.title, "pt-BR");
+      });
+    }
     const rank = (a: Answer | undefined) => {
       if (a === "nao") return 0;
       if (a === "na") return 2;
@@ -57,7 +77,7 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
       if (ra === 0) return b.weight - a.weight;
       return a.title.localeCompare(b.title, "pt-BR");
     });
-  }, [items, answers, query]);
+  }, [items, answers, query, hasManual, positions]);
 
   const answered = items.filter((i) => answers[i.id]?.answer).length;
   const naoCount = items.filter((i) => answers[i.id]?.answer === "nao").length;
@@ -87,12 +107,32 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
     onItemsChange?.();
   };
 
+  const handleDrop = async (targetId: string) => {
+    if (!dragId || !reorderCategory || dragId === targetId) {
+      setDragId(null); setOverId(null); return;
+    }
+    // Reordena na base da lista completa (não filtrada) para preservar busca.
+    const full = hasManual && positions
+      ? [...items].sort((a, b) => (positions[a.id] ?? 1e9) - (positions[b.id] ?? 1e9))
+      : ordered;
+    const ids = full.map((i) => i.id);
+    const from = ids.indexOf(dragId);
+    const to = ids.indexOf(targetId);
+    if (from === -1 || to === -1) { setDragId(null); setOverId(null); return; }
+    const next = [...full];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    setDragId(null); setOverId(null);
+    await reorderCategory(next);
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs">
         <div className="text-muted-foreground">
           {items.length} itens • <span className="font-medium text-foreground">{answered} respondidos</span>
-          {naoCount > 0 && <span className="ml-2 text-danger font-medium">• {naoCount} não conformes no topo</span>}
+          {naoCount > 0 && <span className="ml-2 text-danger font-medium">• {naoCount} não conformes</span>}
+          {hasManual && <span className="ml-2 text-primary">• ordem personalizada</span>}
         </div>
         <div className="flex items-center gap-2">
           <div className="relative w-full sm:w-64">
@@ -118,17 +158,46 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
           const isOpen = openId === item.id;
           const isCustom = item.id.startsWith("c_");
           const imgs = imageUrlsFor?.(item.id) ?? [];
+          const isDragging = dragId === item.id;
+          const isOver = overId === item.id && dragId && dragId !== item.id;
+          const canDrag = !readOnly && !!reorderCategory && !!clientId;
           return (
             <li
               key={item.id}
+              draggable={canDrag}
+              onDragStart={(e) => {
+                if (!canDrag) return;
+                setDragId(item.id);
+                e.dataTransfer.effectAllowed = "move";
+                e.dataTransfer.setData("text/plain", item.id);
+              }}
+              onDragEnter={(e) => {
+                if (!canDrag) return;
+                e.preventDefault();
+                if (dragId && dragId !== item.id) setOverId(item.id);
+              }}
+              onDragOver={(e) => { if (canDrag && dragId) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; } }}
+              onDragLeave={() => { if (overId === item.id) setOverId(null); }}
+              onDrop={(e) => { if (canDrag) { e.preventDefault(); handleDrop(item.id); } }}
+              onDragEnd={() => { setDragId(null); setOverId(null); }}
               className={cn(
-                "transition-all duration-300 ease-out",
+                "transition-all duration-200 ease-out",
                 isNa && "opacity-40 hover:opacity-100",
                 isNao && "bg-danger/5",
+                isDragging && "opacity-50",
+                isOver && "bg-primary/10 outline outline-1 outline-primary/40",
               )}
-              style={{ order: idx }}
             >
-              <div className="flex items-center gap-2 px-3 py-1.5">
+              <div className="flex items-center gap-1.5 px-2 py-1.5">
+                {/* AÇÕES À ESQUERDA: drag • número • norma • editar • excluir • limpar */}
+                {canDrag && (
+                  <span
+                    title="Arrastar para reordenar"
+                    className="flex-shrink-0 w-5 h-6 inline-flex items-center justify-center text-muted-foreground hover:text-primary cursor-grab active:cursor-grabbing"
+                  >
+                    <GripVertical className="w-3.5 h-3.5" />
+                  </span>
+                )}
                 <span
                   className={cn(
                     "flex-shrink-0 w-6 h-5 rounded font-semibold flex items-center justify-center text-[10px]",
@@ -138,20 +207,15 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
                 >
                   {idx + 1}
                 </span>
-                <button type="button" onClick={() => setImageItem(item)} className="flex-1 min-w-0 text-sm text-foreground leading-tight truncate text-left hover:text-primary" title={item.title}>
-                  {item.title}
-                  {imgs.length > 0 && <span className="ml-1.5 inline-flex items-center text-[9px] text-primary/80"><ImageIcon className="w-3 h-3" /></span>}
-                  {isCustom && <span className="ml-2 text-[9px] uppercase text-primary">custom</span>}
-                </button>
 
-                {(item.norma || item.penalidade || item.observacao) && (
+                {(item.norma || item.penalidade || item.observacao || item.risco) ? (
                   <Popover>
                     <PopoverTrigger asChild>
                       <button type="button" title="Ver norma, observação e penalidade" className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-amber-600 hover:bg-amber-500/10">
                         <AlertTriangle className="w-3.5 h-3.5" />
                       </button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-80 text-xs space-y-2" side="left">
+                    <PopoverContent className="w-80 text-xs space-y-2" side="right">
                       {item.norma && (
                         <div>
                           <div className="font-semibold text-foreground mb-1">Norma técnica</div>
@@ -178,9 +242,11 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
                       )}
                     </PopoverContent>
                   </Popover>
+                ) : (
+                  <span className="flex-shrink-0 w-6 h-6" aria-hidden />
                 )}
 
-                {!readOnly && clientId && (
+                {!readOnly && clientId ? (
                   <>
                     <button type="button" title="Editar pergunta" onClick={() => setEditItem(item)} className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary">
                       <Pencil className="w-3 h-3" />
@@ -188,30 +254,54 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
                     <button type="button" title="Excluir pergunta permanentemente" onClick={() => setDeleteItem(item)} className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-danger">
                       <Trash2 className="w-3 h-3" />
                     </button>
+                    <button
+                      type="button"
+                      title="Limpar resposta deste item"
+                      onClick={() => handleClear(item.id)}
+                      disabled={!current}
+                      className={cn(
+                        "flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded transition-opacity",
+                        current ? "text-muted-foreground hover:text-danger" : "opacity-30 cursor-not-allowed",
+                      )}
+                    >
+                      <Eraser className="w-3 h-3" />
+                    </button>
                   </>
-                )}
+                ) : null}
 
+                {/* TÍTULO */}
+                <button type="button" onClick={() => setImageItem(item)} className="flex-1 min-w-0 text-sm text-foreground leading-tight truncate text-left hover:text-primary pl-1" title={item.title}>
+                  {item.title}
+                  {imgs.length > 0 && <span className="ml-1.5 inline-flex items-center text-[9px] text-primary/80"><ImageIcon className="w-3 h-3" /></span>}
+                  {isCustom && <span className="ml-2 text-[9px] uppercase text-primary">custom</span>}
+                </button>
+
+                {/* QUALIDADE compacta (apenas quando "Sim"): toggle único Bom ⇄ Ruim 50% */}
                 {isSim && setQuality && (
-                  <div className="flex gap-0.5 flex-shrink-0">
-                    <button type="button" title="Implementação Boa" onClick={() => setQuality(item.id, "bom")}
-                      className={cn("w-6 h-6 inline-flex items-center justify-center rounded border text-[10px] border-border bg-background hover:border-success/50", quality === "bom" && "bg-success text-white border-success")}>
-                      <ThumbsUp className="w-3 h-3" />
-                    </button>
-                    <button type="button" title="Implementação Ruim (50%)" onClick={() => setQuality(item.id, "ruim")}
-                      className={cn("w-6 h-6 inline-flex items-center justify-center rounded border text-[10px] border-border bg-background hover:border-amber-500/50", quality === "ruim" && "bg-amber-500 text-white border-amber-500")}>
-                      <ThumbsDown className="w-3 h-3" />
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    title={quality === "ruim" ? "Marcado como Ruim — pontua 50%. Clique para voltar a Bom." : "Marcar implementação como Ruim (pontua 50%)"}
+                    onClick={() => setQuality(item.id, quality === "ruim" ? "bom" : "ruim")}
+                    className={cn(
+                      "flex-shrink-0 inline-flex items-center px-1.5 h-6 rounded text-[10px] font-semibold transition-colors",
+                      quality === "ruim"
+                        ? "bg-amber-500 text-white"
+                        : "text-muted-foreground hover:bg-muted",
+                    )}
+                  >
+                    {quality === "ruim" ? "Ruim 50%" : "Bom"}
+                  </button>
                 )}
 
                 {setJustification && (
                   <button type="button" title="Justificativa" onClick={() => setOpenId(isOpen ? null : item.id)}
-                    className={cn("flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded border text-[10px] border-border bg-background hover:border-primary/40", isOpen && "bg-primary text-white border-primary", resp?.justification && "border-primary/50 text-primary")}>
+                    className={cn("flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary", isOpen && "bg-primary text-white", resp?.justification && !isOpen && "text-primary")}>
                     <MessageSquare className="w-3 h-3" />
                   </button>
                 )}
 
-                <div className="flex gap-1 flex-shrink-0">
+                {/* RESPOSTAS À DIREITA */}
+                <div className="flex gap-1 flex-shrink-0 ml-1">
                   {OPTIONS.map((opt) => {
                     const Icon = opt.icon;
                     const active = current === opt.value;
@@ -225,21 +315,6 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
                     );
                   })}
                 </div>
-
-                {!readOnly && (
-                  <button
-                    type="button"
-                    title="Limpar resposta deste item"
-                    onClick={() => handleClear(item.id)}
-                    disabled={!current}
-                    className={cn(
-                      "flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded border text-[10px] border-border bg-background transition-opacity",
-                      current ? "text-muted-foreground hover:text-danger hover:border-danger/40" : "opacity-30 cursor-not-allowed",
-                    )}
-                  >
-                    <Eraser className="w-3 h-3" />
-                  </button>
-                )}
               </div>
 
               {isOpen && setJustification && (
@@ -278,6 +353,7 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
     </div>
   );
 }
+
 
 function ItemImageDialog({ item, onClose, clientId, images, readOnly }: {
   item: ChecklistItem | null; onClose: () => void; clientId: string | null; images: ImageEntry[]; readOnly?: boolean;

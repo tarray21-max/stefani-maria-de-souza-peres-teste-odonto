@@ -100,7 +100,7 @@ function EmptyState() {
 function ClientWorkspace({ clientId }: { clientId: string }) {
   const { current } = useClients();
   const { answers, setAnswer, setQuality, setJustification, reset, loaded } = useChecklistStore(clientId);
-  const { items, refresh: refreshItems, imageUrlsFor } = useItems(clientId);
+  const { items, refresh: refreshItems, imageUrlsFor, positions, reorderCategory } = useItems(clientId);
   const global = computeMaturity(answers, items);
   const color = scoreColorVar(global.score);
 
@@ -144,7 +144,7 @@ function ClientWorkspace({ clientId }: { clientId: string }) {
         {CATEGORIES.map((c) => (
           <TabsContent key={c.id} value={c.id} className="mt-5">
             <SectionHeader title={c.label} subtitle={`${items.filter((i) => i.category === c.id).length} requisitos neste grupo.`} />
-            <ChecklistSection category={c.id} items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} />
+            <ChecklistSection category={c.id} items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} positions={positions} reorderCategory={reorderCategory} />
             {c.id === "documentacao" && (
               <ServiceMatrix answers={answers} setAnswer={setAnswer} />
             )}

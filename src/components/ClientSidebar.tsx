@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useClients, type ClientRow } from "@/lib/client-context";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
+import { formatCNPJ, formatPhone } from "@/lib/format";
 import { toast } from "sonner";
 import { Building2, Plus, Pencil, Trash2, LogOut, Stethoscope } from "lucide-react";
 
@@ -156,7 +157,7 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
                 <Label>Nome *</Label>
                 <Input value={editing.nome ?? ""} onChange={(e) => setEditing({ ...editing, nome: e.target.value })} />
               </div>
-              <div><Label>CNPJ</Label><Input value={editing.cnpj ?? ""} onChange={(e) => setEditing({ ...editing, cnpj: e.target.value })} /></div>
+              <div><Label>CNPJ</Label><Input inputMode="numeric" placeholder="00.000.000/0000-00" value={formatCNPJ(editing.cnpj ?? "")} onChange={(e) => setEditing({ ...editing, cnpj: formatCNPJ(e.target.value) })} /></div>
               <div><Label>Profissional responsável</Label><Input value={editing.profissional_responsavel ?? ""} onChange={(e) => setEditing({ ...editing, profissional_responsavel: e.target.value })} /></div>
               <div>
                 <Label>Área</Label>
@@ -169,7 +170,7 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
                 </Select>
               </div>
               <div><Label>Especialidade</Label><Input value={editing.especialidade ?? ""} onChange={(e) => setEditing({ ...editing, especialidade: e.target.value })} /></div>
-              <div><Label>Telefone</Label><Input value={editing.telefone ?? ""} onChange={(e) => setEditing({ ...editing, telefone: e.target.value })} /></div>
+              <div><Label>Telefone</Label><Input inputMode="tel" placeholder="(00) 00000-0000" value={formatPhone(editing.telefone ?? "")} onChange={(e) => setEditing({ ...editing, telefone: formatPhone(e.target.value) })} /></div>
               <div className="md:col-span-2">
                 <Label>Tipo de contrato</Label>
                 <Select value={editing.tipo_contrato ?? "assessoria_odontologica"} onValueChange={(v) => setEditing({ ...editing, tipo_contrato: v as "assessoria_odontologica" | "regularizacao_sanitaria" })}>
