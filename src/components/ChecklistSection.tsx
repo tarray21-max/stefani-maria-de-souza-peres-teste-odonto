@@ -154,14 +154,31 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2 text-xs">
         <div className="text-muted-foreground">
           {items.length} itens • <span className="font-medium text-foreground">{answered} respondidos</span>
           {naoCount > 0 && <span className="ml-2 text-danger font-medium">• {naoCount} não conformes</span>}
           {hasManual && <span className="ml-2 text-primary">• ordem personalizada</span>}
         </div>
-        <div className="flex items-center gap-2">
-          <div className="relative w-full sm:w-64">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1 rounded-md bg-primary/5 border border-primary/15 p-0.5">
+            {FILTERS.map((f) => (
+              <button
+                key={f.value}
+                type="button"
+                onClick={() => setFilter(f.value)}
+                className={cn(
+                  "px-2 h-7 rounded text-[11px] font-medium transition-colors",
+                  filter === f.value
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-primary",
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+          <div className="relative w-full sm:w-56">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar item…" className="h-8 pl-7 text-xs" />
           </div>
@@ -172,6 +189,7 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
           )}
         </div>
       </div>
+
 
       <ul className="divide-y divide-border/60 rounded-lg border border-border/60 bg-card overflow-hidden">
         {ordered.map((item, idx) => {
