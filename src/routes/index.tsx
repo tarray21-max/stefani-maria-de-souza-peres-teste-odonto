@@ -11,6 +11,7 @@ import { ResetButton } from "@/components/ResetButton";
 import { EvolutionTimeline } from "@/components/EvolutionTimeline";
 import { VisitorLinks } from "@/components/VisitorLinks";
 import { ClientSidebar } from "@/components/ClientSidebar";
+import { ServiceMatrix } from "@/components/ServiceMatrix";
 import { CATEGORIES, computeMaturity, scoreColorVar, type Category } from "@/lib/checklist-data";
 import { useAuth } from "@/lib/auth-context";
 import { useClients } from "@/lib/client-context";
@@ -143,6 +144,9 @@ function ClientWorkspace({ clientId }: { clientId: string }) {
           <TabsContent key={c.id} value={c.id} className="mt-5">
             <SectionHeader title={c.label} subtitle={`${items.filter((i) => i.category === c.id).length} requisitos neste grupo.`} />
             <ChecklistSection category={c.id} items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} />
+            {c.id === "documentacao" && (
+              <ServiceMatrix answers={answers} setAnswer={setAnswer} />
+            )}
           </TabsContent>
         ))}
       </Tabs>
