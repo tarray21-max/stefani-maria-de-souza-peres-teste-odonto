@@ -78,31 +78,6 @@ function Index() {
       <ClientSidebar onSignOut={async () => { await signOut(); window.location.href = "/login"; }} />
 
       <div className="flex-1 flex flex-col min-w-0">
-function ThemeToggle() {
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof window === "undefined") return false;
-    const saved = localStorage.getItem("theme");
-    if (saved) return saved === "dark";
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
-  });
-  const toggle = () => {
-    const next = !isDark;
-    setIsDark(next);
-    localStorage.setItem("theme", next ? "dark" : "light");
-    document.documentElement.classList.toggle("dark", next);
-  };
-  return (
-    <button
-      type="button"
-      onClick={toggle}
-      className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-      title={isDark ? "Modo claro" : "Modo escuro"}
-    >
-      {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-    </button>
-  );
-}
-
         <header className="h-12 flex items-center gap-2 border-b border-border/60 bg-card/60 backdrop-blur-sm sticky top-0 z-30 px-3">
           <SidebarTrigger />
           <div className="flex-1 min-w-0">
