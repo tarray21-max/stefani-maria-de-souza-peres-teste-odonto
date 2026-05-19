@@ -11,6 +11,7 @@ import { ResetButton } from "@/components/ResetButton";
 import { EvolutionTimeline } from "@/components/EvolutionTimeline";
 import { VisitorLinks } from "@/components/VisitorLinks";
 import { ClientSidebar } from "@/components/ClientSidebar";
+import { ServiceMatrix } from "@/components/ServiceMatrix";
 import { CATEGORIES, computeMaturity, scoreColorVar, type Category } from "@/lib/checklist-data";
 import { useAuth } from "@/lib/auth-context";
 import { useClients } from "@/lib/client-context";
