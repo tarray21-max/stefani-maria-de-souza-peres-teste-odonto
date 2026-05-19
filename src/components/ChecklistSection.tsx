@@ -1,16 +1,27 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Answer, Category, ChecklistItem, Quality, ResponseMap } from "@/lib/checklist-data";
-import { Check, X, MinusCircle, Search, AlertTriangle, MessageSquare, Image as ImageIcon, Plus, Trash2, Pencil, Upload, Eraser, GripVertical } from "lucide-react";
+import { Check, X, MinusCircle, Search, MessageSquare, Image as ImageIcon, Plus, Trash2, Pencil, Upload, Eraser, GripVertical, MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+type FilterKind = "all" | "answered" | "unanswered" | "nao" | "sim" | "na";
+
+const FILTERS: { value: FilterKind; label: string }[] = [
+  { value: "all", label: "Todos" },
+  { value: "unanswered", label: "Pendentes" },
+  { value: "answered", label: "Respondidos" },
+  { value: "sim", label: "Conformes" },
+  { value: "nao", label: "Não conformes" },
+  { value: "na", label: "N/A" },
+];
 
 interface ImageEntry { id: string; url: string; path: string }
 
@@ -45,6 +56,8 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
   const [dragId, setDragId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
 
+  const [filter, setFilter] = useState<FilterKind>("all");
+
   const items = useMemo(() => allItems.filter((i) => i.category === category), [allItems, category]);
 
   // Se houver qualquer posição manual nesta categoria, respeita-a;
@@ -54,8 +67,21 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
     [items, positions],
   );
 
+  const matchesFilter = (it: ChecklistItem): boolean => {
+    const a = answers[it.id]?.answer;
+    switch (filter) {
+      case "answered": return !!a;
+      case "unanswered": return !a;
+      case "sim": return a === "sim";
+      case "nao": return a === "nao";
+      case "na": return a === "na";
+      default: return true;
+    }
+  };
+
   const ordered = useMemo(() => {
-    const filtered = query ? items.filter((i) => i.title.toLowerCase().includes(query.toLowerCase())) : items;
+    const base = items.filter(matchesFilter);
+    const filtered = query ? base.filter((i) => i.title.toLowerCase().includes(query.toLowerCase())) : base;
     if (hasManual && positions) {
       const POS = (id: string) => (id in positions ? positions[id] : Number.MAX_SAFE_INTEGER);
       return [...filtered].sort((a, b) => {
@@ -128,14 +154,31 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2 text-xs">
         <div className="text-muted-foreground">
           {items.length} itens • <span className="font-medium text-foreground">{answered} respondidos</span>
           {naoCount > 0 && <span className="ml-2 text-danger font-medium">• {naoCount} não conformes</span>}
           {hasManual && <span className="ml-2 text-primary">• ordem personalizada</span>}
         </div>
-        <div className="flex items-center gap-2">
-          <div className="relative w-full sm:w-64">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1 rounded-md bg-primary/5 border border-primary/15 p-0.5">
+            {FILTERS.map((f) => (
+              <button
+                key={f.value}
+                type="button"
+                onClick={() => setFilter(f.value)}
+                className={cn(
+                  "px-2 h-7 rounded text-[11px] font-medium transition-colors",
+                  filter === f.value
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-primary",
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+          <div className="relative w-full sm:w-56">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar item…" className="h-8 pl-7 text-xs" />
           </div>
@@ -146,6 +189,7 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
           )}
         </div>
       </div>
+
 
       <ul className="divide-y divide-border/60 rounded-lg border border-border/60 bg-card overflow-hidden">
         {ordered.map((item, idx) => {
@@ -208,66 +252,32 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
                   {idx + 1}
                 </span>
 
-                {(item.norma || item.penalidade || item.observacao || item.risco) ? (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button type="button" title="Ver norma, observação e penalidade" className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-amber-600 hover:bg-amber-500/10">
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 text-xs space-y-2" side="right">
-                      {item.norma && (
-                        <div>
-                          <div className="font-semibold text-foreground mb-1">Norma técnica</div>
-                          <p className="text-muted-foreground whitespace-pre-wrap">{item.norma}</p>
-                        </div>
-                      )}
-                      {item.observacao && (
-                        <div>
-                          <div className="font-semibold text-foreground mb-1">Observação</div>
-                          <p className="text-muted-foreground whitespace-pre-wrap">{item.observacao}</p>
-                        </div>
-                      )}
-                      {item.penalidade && (
-                        <div>
-                          <div className="font-semibold text-danger mb-1">Penalidade</div>
-                          <p className="text-muted-foreground whitespace-pre-wrap">{item.penalidade}</p>
-                        </div>
-                      )}
-                      {item.risco && (
-                        <div>
-                          <div className="font-semibold text-danger mb-1">Consequência</div>
-                          <p className="text-muted-foreground whitespace-pre-wrap">{item.risco}</p>
-                        </div>
-                      )}
-                    </PopoverContent>
-                  </Popover>
-                ) : (
-                  <span className="flex-shrink-0 w-6 h-6" aria-hidden />
-                )}
-
                 {!readOnly && clientId ? (
-                  <>
-                    <button type="button" title="Editar pergunta" onClick={() => setEditItem(item)} className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary">
-                      <Pencil className="w-3 h-3" />
-                    </button>
-                    <button type="button" title="Excluir pergunta permanentemente" onClick={() => setDeleteItem(item)} className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-danger">
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                    <button
-                      type="button"
-                      title="Limpar resposta deste item"
-                      onClick={() => handleClear(item.id)}
-                      disabled={!current}
-                      className={cn(
-                        "flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded transition-opacity",
-                        current ? "text-muted-foreground hover:text-danger" : "opacity-30 cursor-not-allowed",
-                      )}
-                    >
-                      <Eraser className="w-3 h-3" />
-                    </button>
-                  </>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        title="Ações"
+                        className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-primary/10"
+                      >
+                        <MoreVertical className="w-3.5 h-3.5" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-44">
+                      <DropdownMenuItem onClick={() => setEditItem(item)}>
+                        <Pencil className="w-3.5 h-3.5 mr-2" /> Editar pergunta
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleClear(item.id)} disabled={!current}>
+                        <Eraser className="w-3.5 h-3.5 mr-2" /> Limpar resposta
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setDeleteItem(item)} className="text-danger focus:text-danger">
+                        <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir pergunta
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 ) : null}
+
 
                 {/* TÍTULO */}
                 <button type="button" onClick={() => setImageItem(item)} className="flex-1 min-w-0 text-sm text-foreground leading-tight truncate text-left hover:text-primary pl-1" title={item.title}>
@@ -328,7 +338,7 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
         {ordered.length === 0 && <li className="px-3 py-6 text-center text-sm text-muted-foreground">Nenhum item encontrado.</li>}
       </ul>
 
-      <ItemImageDialog item={imageItem} onClose={() => setImageItem(null)} clientId={clientId} images={imageItem ? imageUrlsFor?.(imageItem.id) ?? [] : []} readOnly={readOnly} />
+      <ItemImageDialog item={imageItem} onClose={() => setImageItem(null)} clientId={clientId} images={imageItem ? imageUrlsFor?.(imageItem.id) ?? [] : []} readOnly={readOnly} onEdit={(it) => { setImageItem(null); setEditItem(it); }} />
       <ItemFormDialog open={showAdd} onClose={() => setShowAdd(false)} category={category} clientId={clientId} onSaved={() => { setShowAdd(false); onItemsChange?.(); }} />
       <ItemFormDialog open={!!editItem} onClose={() => setEditItem(null)} category={category} clientId={clientId} item={editItem} onSaved={() => { setEditItem(null); onItemsChange?.(); }} />
 
@@ -355,8 +365,8 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
 }
 
 
-function ItemImageDialog({ item, onClose, clientId, images, readOnly }: {
-  item: ChecklistItem | null; onClose: () => void; clientId: string | null; images: ImageEntry[]; readOnly?: boolean;
+function ItemImageDialog({ item, onClose, clientId, images, readOnly, onEdit }: {
+  item: ChecklistItem | null; onClose: () => void; clientId: string | null; images: ImageEntry[]; readOnly?: boolean; onEdit?: (it: ChecklistItem) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -380,10 +390,21 @@ function ItemImageDialog({ item, onClose, clientId, images, readOnly }: {
     toast.success("Imagem removida");
   };
 
+  const renderField = (label: string, value: string | undefined, tone: "default" | "danger" = "default") => (
+    <div className="rounded-md border border-border/60 bg-muted/30 p-3">
+      <div className={cn("text-[10px] font-semibold uppercase tracking-wider mb-1", tone === "danger" ? "text-danger" : "text-primary")}>{label}</div>
+      {value ? (
+        <p className="text-xs text-foreground whitespace-pre-wrap leading-relaxed">{value}</p>
+      ) : (
+        <p className="text-xs italic text-muted-foreground">Não preenchido — clique em "Editar detalhes" para adicionar.</p>
+      )}
+    </div>
+  );
+
   return (
     <Dialog open={!!item} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader><DialogTitle>{item?.title}</DialogTitle></DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle className="pr-8">{item?.title}</DialogTitle></DialogHeader>
         {images.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {images.map((img) => (
@@ -404,12 +425,14 @@ function ItemImageDialog({ item, onClose, clientId, images, readOnly }: {
             {item?.referencia && <p className="text-xs text-muted-foreground mt-2 italic max-w-md">{item.referencia}</p>}
           </div>
         )}
-        {item?.norma && <p className="text-xs text-muted-foreground"><strong>Norma:</strong> {item.norma}</p>}
-        {item?.observacao && <p className="text-xs text-muted-foreground"><strong>Observação:</strong> {item.observacao}</p>}
-        {item?.penalidade && <p className="text-xs text-muted-foreground"><strong>Penalidade:</strong> {item.penalidade}</p>}
-        {item?.risco && <p className="text-xs text-muted-foreground"><strong>Risco:</strong> {item.risco}</p>}
+        <div className="space-y-2 mt-2">
+          {renderField("Norma técnica", item?.norma)}
+          {renderField("Observação", item?.observacao)}
+          {renderField("Penalidade", item?.penalidade, "danger")}
+          {item?.risco && renderField("Consequência", item.risco, "danger")}
+        </div>
         {!readOnly && clientId && (
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <input
               ref={fileRef}
               type="file"
@@ -421,6 +444,11 @@ function ItemImageDialog({ item, onClose, clientId, images, readOnly }: {
                 if (fileRef.current) fileRef.current.value = "";
               }}
             />
+            {onEdit && item && (
+              <Button variant="outline" onClick={() => onEdit(item)}>
+                <Pencil className="w-3.5 h-3.5 mr-1" /> Editar detalhes
+              </Button>
+            )}
             <Button onClick={() => fileRef.current?.click()} disabled={busy}>
               <Upload className="w-3.5 h-3.5 mr-1" /> {busy ? "Enviando…" : "Adicionar imagem"}
             </Button>
@@ -430,6 +458,7 @@ function ItemImageDialog({ item, onClose, clientId, images, readOnly }: {
     </Dialog>
   );
 }
+
 
 function ItemFormDialog({ open, onClose, category, clientId, item, onSaved }: {
   open: boolean; onClose: () => void; category: Category; clientId: string | null; item?: ChecklistItem | null; onSaved: () => void;

@@ -50,18 +50,24 @@ export function Dashboard({ answers, items, client }: Props) {
 
   return (
     <div className="space-y-6">
-      <Card className="p-6 md:p-8 border-border/60 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-50 pointer-events-none" style={{ background: "var(--gradient-surface)" }} />
+      <Card
+        className="p-6 md:p-8 border-primary/20 relative overflow-hidden text-primary-foreground shadow-[var(--shadow-elegant)]"
+        style={{ background: "var(--gradient-primary)" }}
+      >
+        <div
+          className="absolute -top-24 -right-24 w-72 h-72 rounded-full opacity-30 blur-3xl pointer-events-none"
+          style={{ background: "var(--brand-blue-bright)" }}
+        />
         <div className="relative grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-8 items-center">
           <div className="min-w-0">
-            <div className="flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-primary mb-2">
+            <div className="flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-white/80 mb-2">
               <Building2 className="w-3.5 h-3.5" />
               Identificação da Clínica
             </div>
-            <h2 className="text-2xl font-bold text-foreground leading-tight">
+            <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight">
               {client?.nome ?? "—"}
             </h2>
-            <div className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
+            <div className="mt-1 text-xs uppercase tracking-wider text-white/70">
               {client?.area === "medicina" ? "Medicina" : "Odontologia"}
             </div>
 
@@ -71,31 +77,33 @@ export function Dashboard({ answers, items, client }: Props) {
                   const Icon = i.icon;
                   return (
                     <div key={i.label} className="flex items-start gap-2.5 min-w-0">
-                      <div className="w-7 h-7 rounded-md bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                      <div className="w-7 h-7 rounded-md bg-white/15 text-white flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
                         <Icon className="w-3.5 h-3.5" />
                       </div>
                       <div className="min-w-0">
-                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{i.label}</div>
-                        <div className="text-sm font-medium text-foreground truncate">{i.value}</div>
+                        <div className="text-[10px] uppercase tracking-wider text-white/60">{i.label}</div>
+                        <div className="text-sm font-medium text-white truncate">{i.value}</div>
                       </div>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <p className="mt-4 text-sm text-muted-foreground">
+              <p className="mt-4 text-sm text-white/70">
                 Complete o cadastro da clínica para exibir os dados aqui.
               </p>
             )}
           </div>
 
-          <div className="flex flex-col items-center lg:border-l lg:border-border/60 lg:pl-8">
-            <div className="flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-primary mb-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+          <div className="flex flex-col items-center lg:border-l lg:border-white/20 lg:pl-8">
+            <div className="flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-white/80 mb-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-white" />
               Maturidade Regulatória
             </div>
-            <ToothGauge score={global.score} size={240} />
-            <p className="text-sm text-muted-foreground mt-3 text-center">
+            <div className="rounded-full bg-white/10 p-3 backdrop-blur-sm">
+              <ToothGauge score={global.score} size={220} />
+            </div>
+            <p className="text-sm text-white/80 mt-3 text-center">
               {global.totalSim} conformes de {global.totalApplicable} itens aplicáveis
             </p>
           </div>
@@ -107,8 +115,14 @@ export function Dashboard({ answers, items, client }: Props) {
         {stats.map((s) => {
           const Icon = s.icon;
           return (
-            <Card key={s.label} className="p-5 border-border/60">
-              <Icon className="w-5 h-5" style={{ color: s.color }} />
+            <Card
+              key={s.label}
+              className="p-5 border-primary/15 relative overflow-hidden"
+              style={{ background: "linear-gradient(135deg, var(--card) 60%, color-mix(in oklab, var(--primary) 8%, var(--card)))" }}
+            >
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "color-mix(in oklab, var(--primary) 12%, transparent)" }}>
+                <Icon className="w-5 h-5" style={{ color: s.color }} />
+              </div>
               <div className="mt-3 text-3xl font-bold text-foreground">{s.value}</div>
               <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">{s.label}</div>
             </Card>
@@ -118,7 +132,11 @@ export function Dashboard({ answers, items, client }: Props) {
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {perCategory.map((c) => (
-          <Card key={c.id} className="p-6 border-border/60">
+          <Card
+            key={c.id}
+            className="p-6 border-primary/15"
+            style={{ background: "linear-gradient(180deg, var(--card), color-mix(in oklab, var(--primary) 5%, var(--card)))" }}
+          >
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-foreground">{c.short}</h3>
               <span className="text-sm font-bold" style={{ color: scoreColorVar(c.result.score) }}>
@@ -133,9 +151,14 @@ export function Dashboard({ answers, items, client }: Props) {
         ))}
       </div>
 
-      <Card className="p-6 border-border/60">
+      <Card
+        className="p-6 border-primary/15"
+        style={{ background: "linear-gradient(180deg, var(--card), color-mix(in oklab, var(--primary) 4%, var(--card)))" }}
+      >
         <div className="flex items-center gap-2 mb-4">
-          <AlertTriangle className="w-5 h-5 text-danger" />
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-danger/10">
+            <AlertTriangle className="w-5 h-5 text-danger" />
+          </div>
           <h3 className="font-semibold text-foreground">Principais Gargalos</h3>
           <span className="text-xs text-muted-foreground ml-auto">Itens "Não" com maior peso</span>
         </div>
