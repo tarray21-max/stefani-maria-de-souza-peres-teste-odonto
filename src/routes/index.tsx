@@ -100,7 +100,7 @@ function EmptyState() {
 function ClientWorkspace({ clientId }: { clientId: string }) {
   const { current } = useClients();
   const { answers, setAnswer, setQuality, setJustification, reset, loaded } = useChecklistStore(clientId);
-  const { items, refresh: refreshItems, imageUrlsFor } = useItems(clientId);
+  const { items, refresh: refreshItems, imageUrlsFor, positions, reorderCategory } = useItems(clientId);
   const global = computeMaturity(answers, items);
   const color = scoreColorVar(global.score);
 
