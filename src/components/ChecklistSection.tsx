@@ -282,7 +282,7 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
                 {/* TÍTULO */}
                 <button type="button" onClick={() => setImageItem(item)} className="flex-1 min-w-0 text-sm text-foreground leading-tight truncate text-left hover:text-primary pl-1" title={item.title}>
                   {item.title}
-                  {imgs.length > 0 && <span className="ml-1.5 inline-flex items-center text-[9px] text-primary/80"><ImageIcon className="w-3 h-3" /></span>}
+                  
                   {isCustom && <span className="ml-2 text-[9px] uppercase text-primary">custom</span>}
                 </button>
 
