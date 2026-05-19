@@ -15,7 +15,8 @@ import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCNPJ, formatPhone } from "@/lib/format";
 import { toast } from "sonner";
-import { Building2, Plus, Pencil, Trash2, LogOut, Stethoscope } from "lucide-react";
+import { Building2, Plus, Pencil, Trash2, LogOut } from "lucide-react";
+import brandLogo from "@/assets/bs-logo-on-white.jpg";
 
 export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
   const { clients, current, setCurrentId, refresh } = useClients();
@@ -64,17 +65,18 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border/60 px-2 py-3">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white flex-shrink-0" style={{ background: "var(--gradient-primary)" }}>
-            <Stethoscope className="w-4 h-4" />
+        {collapsed ? (
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center mx-auto text-white font-extrabold text-[11px] tracking-tight" style={{ background: "var(--brand-blue-deep)" }}>
+            BS
           </div>
-          {!collapsed && (
-            <div className="min-w-0">
-              <div className="font-semibold text-sm leading-tight truncate">Maturidade</div>
-              <div className="text-[10px] text-muted-foreground truncate">Regulatória Clínica</div>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            <img src={brandLogo} alt="Brasil e Silveira Advogados" className="h-10 w-auto object-contain self-start" />
+            <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-medium pl-0.5">
+              Maturidade Regulatória
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </SidebarHeader>
 
       <SidebarContent>

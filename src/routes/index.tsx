@@ -152,8 +152,8 @@ function ClientWorkspace({ clientId }: { clientId: string }) {
         ))}
       </Tabs>
 
-      <footer className="mt-10 text-center text-xs text-muted-foreground">
-        Painel sincronizado em tempo real via Lovable Cloud.
+      <footer className="mt-10 pt-4 border-t border-border/60 text-center text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+        Brasil e Silveira Advogados · Maturidade Regulatória
       </footer>
     </>
   );
