@@ -1,5 +1,6 @@
 import { CATEGORIES, computeMaturity, scoreColorVar, type ChecklistItem, type ResponseMap } from "@/lib/checklist-data";
 import type { ClientRow } from "@/lib/client-context";
+import { formatCNPJ, formatPhone } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ToothGauge } from "./ToothGauge";
