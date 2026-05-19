@@ -136,7 +136,7 @@ function ClientWorkspace({ clientId }: { clientId: string }) {
         </TabsList>
 
         <TabsContent value="dashboard" className="mt-5 space-y-5">
-          <Dashboard answers={answers} items={items} />
+          <Dashboard answers={answers} items={items} client={current} />
           <EvolutionTimeline clientId={clientId} answers={answers} items={items} />
         </TabsContent>
 
