@@ -140,7 +140,6 @@ export function useItems(clientId: string | null) {
         for (const r of rows) next[r.item_id] = r.position;
         return next;
       });
-      // @ts-expect-error - table generated types may not include item_positions yet
       const { error } = await supabase.from("item_positions").upsert(rows, { onConflict: "client_id,item_id" });
       if (error) console.error("[item_positions] upsert", error);
     },
