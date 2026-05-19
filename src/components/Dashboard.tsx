@@ -49,7 +49,7 @@ export function Dashboard({ answers, items, client }: Props) {
     : [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-muted/60 rounded-xl p-5 border border-border/40">
       <Card
         className="p-6 md:p-8 border-primary/20 relative overflow-hidden text-primary-foreground shadow-[var(--shadow-elegant)]"
         style={{ background: "var(--gradient-primary)" }}
