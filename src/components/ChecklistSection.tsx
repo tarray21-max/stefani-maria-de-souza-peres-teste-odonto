@@ -1,16 +1,27 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Answer, Category, ChecklistItem, Quality, ResponseMap } from "@/lib/checklist-data";
-import { Check, X, MinusCircle, Search, AlertTriangle, MessageSquare, Image as ImageIcon, Plus, Trash2, Pencil, Upload, Eraser, GripVertical } from "lucide-react";
+import { Check, X, MinusCircle, Search, MessageSquare, Image as ImageIcon, Plus, Trash2, Pencil, Upload, Eraser, GripVertical, MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+type FilterKind = "all" | "answered" | "unanswered" | "nao" | "sim" | "na";
+
+const FILTERS: { value: FilterKind; label: string }[] = [
+  { value: "all", label: "Todos" },
+  { value: "unanswered", label: "Pendentes" },
+  { value: "answered", label: "Respondidos" },
+  { value: "sim", label: "Conformes" },
+  { value: "nao", label: "Não conformes" },
+  { value: "na", label: "N/A" },
+];
 
 interface ImageEntry { id: string; url: string; path: string }
 
