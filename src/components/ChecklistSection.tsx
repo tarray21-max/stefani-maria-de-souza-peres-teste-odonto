@@ -365,8 +365,8 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
 }
 
 
-function ItemImageDialog({ item, onClose, clientId, images, readOnly }: {
-  item: ChecklistItem | null; onClose: () => void; clientId: string | null; images: ImageEntry[]; readOnly?: boolean;
+function ItemImageDialog({ item, onClose, clientId, images, readOnly, onEdit }: {
+  item: ChecklistItem | null; onClose: () => void; clientId: string | null; images: ImageEntry[]; readOnly?: boolean; onEdit?: (it: ChecklistItem) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -390,10 +390,21 @@ function ItemImageDialog({ item, onClose, clientId, images, readOnly }: {
     toast.success("Imagem removida");
   };
 
+  const renderField = (label: string, value: string | undefined, tone: "default" | "danger" = "default") => (
+    <div className="rounded-md border border-border/60 bg-muted/30 p-3">
+      <div className={cn("text-[10px] font-semibold uppercase tracking-wider mb-1", tone === "danger" ? "text-danger" : "text-primary")}>{label}</div>
+      {value ? (
+        <p className="text-xs text-foreground whitespace-pre-wrap leading-relaxed">{value}</p>
+      ) : (
+        <p className="text-xs italic text-muted-foreground">Não preenchido — clique em "Editar detalhes" para adicionar.</p>
+      )}
+    </div>
+  );
+
   return (
     <Dialog open={!!item} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader><DialogTitle>{item?.title}</DialogTitle></DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle className="pr-8">{item?.title}</DialogTitle></DialogHeader>
         {images.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {images.map((img) => (
@@ -414,12 +425,14 @@ function ItemImageDialog({ item, onClose, clientId, images, readOnly }: {
             {item?.referencia && <p className="text-xs text-muted-foreground mt-2 italic max-w-md">{item.referencia}</p>}
           </div>
         )}
-        {item?.norma && <p className="text-xs text-muted-foreground"><strong>Norma:</strong> {item.norma}</p>}
-        {item?.observacao && <p className="text-xs text-muted-foreground"><strong>Observação:</strong> {item.observacao}</p>}
-        {item?.penalidade && <p className="text-xs text-muted-foreground"><strong>Penalidade:</strong> {item.penalidade}</p>}
-        {item?.risco && <p className="text-xs text-muted-foreground"><strong>Risco:</strong> {item.risco}</p>}
+        <div className="space-y-2 mt-2">
+          {renderField("Norma técnica", item?.norma)}
+          {renderField("Observação", item?.observacao)}
+          {renderField("Penalidade", item?.penalidade, "danger")}
+          {item?.risco && renderField("Consequência", item.risco, "danger")}
+        </div>
         {!readOnly && clientId && (
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <input
               ref={fileRef}
               type="file"
@@ -431,6 +444,11 @@ function ItemImageDialog({ item, onClose, clientId, images, readOnly }: {
                 if (fileRef.current) fileRef.current.value = "";
               }}
             />
+            {onEdit && item && (
+              <Button variant="outline" onClick={() => onEdit(item)}>
+                <Pencil className="w-3.5 h-3.5 mr-1" /> Editar detalhes
+              </Button>
+            )}
             <Button onClick={() => fileRef.current?.click()} disabled={busy}>
               <Upload className="w-3.5 h-3.5 mr-1" /> {busy ? "Enviando…" : "Adicionar imagem"}
             </Button>
@@ -440,6 +458,7 @@ function ItemImageDialog({ item, onClose, clientId, images, readOnly }: {
     </Dialog>
   );
 }
+
 
 function ItemFormDialog({ open, onClose, category, clientId, item, onSaved }: {
   open: boolean; onClose: () => void; category: Category; clientId: string | null; item?: ChecklistItem | null; onSaved: () => void;
