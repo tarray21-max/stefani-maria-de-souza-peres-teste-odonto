@@ -252,66 +252,32 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
                   {idx + 1}
                 </span>
 
-                {(item.norma || item.penalidade || item.observacao || item.risco) ? (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button type="button" title="Ver norma, observação e penalidade" className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-amber-600 hover:bg-amber-500/10">
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 text-xs space-y-2" side="right">
-                      {item.norma && (
-                        <div>
-                          <div className="font-semibold text-foreground mb-1">Norma técnica</div>
-                          <p className="text-muted-foreground whitespace-pre-wrap">{item.norma}</p>
-                        </div>
-                      )}
-                      {item.observacao && (
-                        <div>
-                          <div className="font-semibold text-foreground mb-1">Observação</div>
-                          <p className="text-muted-foreground whitespace-pre-wrap">{item.observacao}</p>
-                        </div>
-                      )}
-                      {item.penalidade && (
-                        <div>
-                          <div className="font-semibold text-danger mb-1">Penalidade</div>
-                          <p className="text-muted-foreground whitespace-pre-wrap">{item.penalidade}</p>
-                        </div>
-                      )}
-                      {item.risco && (
-                        <div>
-                          <div className="font-semibold text-danger mb-1">Consequência</div>
-                          <p className="text-muted-foreground whitespace-pre-wrap">{item.risco}</p>
-                        </div>
-                      )}
-                    </PopoverContent>
-                  </Popover>
-                ) : (
-                  <span className="flex-shrink-0 w-6 h-6" aria-hidden />
-                )}
-
                 {!readOnly && clientId ? (
-                  <>
-                    <button type="button" title="Editar pergunta" onClick={() => setEditItem(item)} className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary">
-                      <Pencil className="w-3 h-3" />
-                    </button>
-                    <button type="button" title="Excluir pergunta permanentemente" onClick={() => setDeleteItem(item)} className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-danger">
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                    <button
-                      type="button"
-                      title="Limpar resposta deste item"
-                      onClick={() => handleClear(item.id)}
-                      disabled={!current}
-                      className={cn(
-                        "flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded transition-opacity",
-                        current ? "text-muted-foreground hover:text-danger" : "opacity-30 cursor-not-allowed",
-                      )}
-                    >
-                      <Eraser className="w-3 h-3" />
-                    </button>
-                  </>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        title="Ações"
+                        className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-primary/10"
+                      >
+                        <MoreVertical className="w-3.5 h-3.5" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-44">
+                      <DropdownMenuItem onClick={() => setEditItem(item)}>
+                        <Pencil className="w-3.5 h-3.5 mr-2" /> Editar pergunta
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleClear(item.id)} disabled={!current}>
+                        <Eraser className="w-3.5 h-3.5 mr-2" /> Limpar resposta
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setDeleteItem(item)} className="text-danger focus:text-danger">
+                        <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir pergunta
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 ) : null}
+
 
                 {/* TÍTULO */}
                 <button type="button" onClick={() => setImageItem(item)} className="flex-1 min-w-0 text-sm text-foreground leading-tight truncate text-left hover:text-primary pl-1" title={item.title}>
