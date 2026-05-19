@@ -56,6 +56,8 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
   const [dragId, setDragId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
 
+  const [filter, setFilter] = useState<FilterKind>("all");
+
   const items = useMemo(() => allItems.filter((i) => i.category === category), [allItems, category]);
 
   // Se houver qualquer posição manual nesta categoria, respeita-a;
@@ -65,8 +67,21 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
     [items, positions],
   );
 
+  const matchesFilter = (it: ChecklistItem): boolean => {
+    const a = answers[it.id]?.answer;
+    switch (filter) {
+      case "answered": return !!a;
+      case "unanswered": return !a;
+      case "sim": return a === "sim";
+      case "nao": return a === "nao";
+      case "na": return a === "na";
+      default: return true;
+    }
+  };
+
   const ordered = useMemo(() => {
-    const filtered = query ? items.filter((i) => i.title.toLowerCase().includes(query.toLowerCase())) : items;
+    const base = items.filter(matchesFilter);
+    const filtered = query ? base.filter((i) => i.title.toLowerCase().includes(query.toLowerCase())) : base;
     if (hasManual && positions) {
       const POS = (id: string) => (id in positions ? positions[id] : Number.MAX_SAFE_INTEGER);
       return [...filtered].sort((a, b) => {
