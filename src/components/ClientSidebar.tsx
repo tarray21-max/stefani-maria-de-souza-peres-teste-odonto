@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
@@ -27,6 +27,12 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
 
   const startNew = () => setEditing({ area: "odontologia", tipo_contrato: "assessoria_odontologica", nome: "" });
   const startEdit = (c: ClientRow) => setEditing(c);
+
+  useEffect(() => {
+    const handler = () => { if (current) startEdit(current); };
+    window.addEventListener("edit-client", handler);
+    return () => window.removeEventListener("edit-client", handler);
+  }, [current]);
 
   const remove = async (c: ClientRow) => {
     const { error } = await supabase.from("clients").delete().eq("id", c.id);

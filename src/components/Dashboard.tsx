@@ -4,7 +4,8 @@ import { formatCNPJ, formatPhone } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ToothGauge } from "./ToothGauge";
-import { AlertTriangle, CheckCircle2, MinusCircle, TrendingUp, Building2, User, Hash, MapPin, Phone, Briefcase, Stethoscope } from "lucide-react";
+import { AlertTriangle, CheckCircle2, MinusCircle, TrendingUp, Building2, User, Hash, MapPin, Phone, Briefcase, Stethoscope, Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   answers: ResponseMap;
@@ -64,9 +65,20 @@ export function Dashboard({ answers, items, client }: Props) {
               <Building2 className="w-3.5 h-3.5" />
               Identificação da Clínica
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight">
-              {client?.nome ?? "—"}
-            </h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight">
+                {client?.nome ?? "—"}
+              </h2>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 rounded-full bg-white/15 text-white hover:bg-white/25 hover:text-white shrink-0"
+                title="Editar clínica"
+                onClick={() => window.dispatchEvent(new CustomEvent("edit-client"))}
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+            </div>
             <div className="mt-1 text-xs uppercase tracking-wider text-white/70">
               {client?.area === "medicina" ? "Medicina" : "Odontologia"}
             </div>
