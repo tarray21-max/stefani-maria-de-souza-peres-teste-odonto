@@ -66,8 +66,8 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border/60 px-2 py-3">
         {collapsed ? (
-          <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center mx-auto" style={{ background: "var(--brand-blue-deep)" }}>
-            <img src={brandLogo} alt="Brasil e Silveira" className="w-7 h-7 object-cover scale-[2.2] origin-left" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center mx-auto text-white font-extrabold text-[11px] tracking-tight" style={{ background: "var(--brand-blue-deep)" }}>
+            BS
           </div>
         ) : (
           <div className="flex flex-col gap-1.5">
