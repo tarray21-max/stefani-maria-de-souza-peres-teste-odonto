@@ -144,6 +144,9 @@ function ClientWorkspace({ clientId }: { clientId: string }) {
           <TabsContent key={c.id} value={c.id} className="mt-5">
             <SectionHeader title={c.label} subtitle={`${items.filter((i) => i.category === c.id).length} requisitos neste grupo.`} />
             <ChecklistSection category={c.id} items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} />
+            {c.id === "documentacao" && (
+              <ServiceMatrix answers={answers} setAnswer={setAnswer} />
+            )}
           </TabsContent>
         ))}
       </Tabs>
