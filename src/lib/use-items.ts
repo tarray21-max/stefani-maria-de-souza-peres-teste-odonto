@@ -58,7 +58,6 @@ export function useItems(clientId: string | null) {
       supabase.from("disabled_items").select("item_id").eq("client_id", clientId),
       supabase.from("item_overrides").select("*").eq("client_id", clientId),
       supabase.from("item_images").select("*").eq("client_id", clientId).order("created_at", { ascending: false }),
-      // @ts-expect-error - table generated types may not include item_positions yet
       supabase.from("item_positions").select("item_id, position").eq("client_id", clientId),
     ]);
     setCustom((c.data ?? []) as unknown as CustomItemRow[]);
