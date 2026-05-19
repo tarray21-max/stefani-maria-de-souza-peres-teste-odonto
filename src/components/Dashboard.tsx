@@ -1,15 +1,22 @@
 import { CATEGORIES, computeMaturity, scoreColorVar, type ChecklistItem, type ResponseMap } from "@/lib/checklist-data";
+import type { ClientRow } from "@/lib/client-context";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ToothGauge } from "./ToothGauge";
-import { AlertTriangle, CheckCircle2, MinusCircle, TrendingUp } from "lucide-react";
+import { AlertTriangle, CheckCircle2, MinusCircle, TrendingUp, Building2, User, Hash, MapPin, Phone, Briefcase, Stethoscope } from "lucide-react";
 
 interface Props {
   answers: ResponseMap;
   items: ChecklistItem[];
+  client?: ClientRow | null;
 }
 
-export function Dashboard({ answers, items }: Props) {
+const CONTRATO_LABEL: Record<ClientRow["tipo_contrato"], string> = {
+  assessoria_odontologica: "Assessoria Odontológica",
+  regularizacao_sanitaria: "Regularização Sanitária",
+};
+
+export function Dashboard({ answers, items, client }: Props) {
   const global = computeMaturity(answers, items);
 
   const perCategory = CATEGORIES.map((c) => ({
@@ -29,22 +36,71 @@ export function Dashboard({ answers, items }: Props) {
     { label: "Itens totais", value: global.totalItems, icon: TrendingUp, color: "var(--primary)" },
   ];
 
+  const clinicaItems = client
+    ? [
+        { icon: User, label: "Responsável Técnico", value: client.profissional_responsavel },
+        { icon: Stethoscope, label: "Especialidade", value: client.especialidade },
+        { icon: Hash, label: "CNPJ", value: client.cnpj },
+        { icon: Briefcase, label: "Contrato", value: CONTRATO_LABEL[client.tipo_contrato] },
+        { icon: Phone, label: "Telefone", value: client.telefone },
+        { icon: MapPin, label: "Endereço", value: client.endereco },
+      ].filter((i) => i.value && String(i.value).trim().length > 0)
+    : [];
+
   return (
     <div className="space-y-6">
-      <Card className="p-8 border-border/60 relative overflow-hidden">
+      <Card className="p-6 md:p-8 border-border/60 relative overflow-hidden">
         <div className="absolute inset-0 opacity-50 pointer-events-none" style={{ background: "var(--gradient-surface)" }} />
-        <div className="relative flex flex-col items-center text-center">
-          <div className="flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-primary mb-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-            Maturidade Regulatória Global
+        <div className="relative grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-8 items-center">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-primary mb-2">
+              <Building2 className="w-3.5 h-3.5" />
+              Identificação da Clínica
+            </div>
+            <h2 className="text-2xl font-bold text-foreground leading-tight">
+              {client?.nome ?? "—"}
+            </h2>
+            <div className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
+              {client?.area === "medicina" ? "Medicina" : "Odontologia"}
+            </div>
+
+            {clinicaItems.length > 0 ? (
+              <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {clinicaItems.map((i) => {
+                  const Icon = i.icon;
+                  return (
+                    <div key={i.label} className="flex items-start gap-2.5 min-w-0">
+                      <div className="w-7 h-7 rounded-md bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                        <Icon className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{i.label}</div>
+                        <div className="text-sm font-medium text-foreground truncate">{i.value}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="mt-4 text-sm text-muted-foreground">
+                Complete o cadastro da clínica para exibir os dados aqui.
+              </p>
+            )}
           </div>
-          <h2 className="text-2xl font-bold text-foreground mb-6">Visão consolidada da clínica</h2>
-          <ToothGauge score={global.score} size={280} />
-          <p className="text-sm text-muted-foreground mt-4">
-            {global.totalSim} conformes de {global.totalApplicable} itens aplicáveis
-          </p>
+
+          <div className="flex flex-col items-center lg:border-l lg:border-border/60 lg:pl-8">
+            <div className="flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-primary mb-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+              Maturidade Regulatória
+            </div>
+            <ToothGauge score={global.score} size={240} />
+            <p className="text-sm text-muted-foreground mt-3 text-center">
+              {global.totalSim} conformes de {global.totalApplicable} itens aplicáveis
+            </p>
+          </div>
         </div>
       </Card>
+
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {stats.map((s) => {
