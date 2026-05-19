@@ -98,6 +98,7 @@ function EmptyState() {
 }
 
 function ClientWorkspace({ clientId }: { clientId: string }) {
+  const { current } = useClients();
   const { answers, setAnswer, setQuality, setJustification, reset, loaded } = useChecklistStore(clientId);
   const { items, refresh: refreshItems, imageUrlsFor } = useItems(clientId);
   const global = computeMaturity(answers, items);
@@ -136,7 +137,7 @@ function ClientWorkspace({ clientId }: { clientId: string }) {
         </TabsList>
 
         <TabsContent value="dashboard" className="mt-5 space-y-5">
-          <Dashboard answers={answers} items={items} />
+          <Dashboard answers={answers} items={items} client={current} />
           <EvolutionTimeline clientId={clientId} answers={answers} items={items} />
         </TabsContent>
 
