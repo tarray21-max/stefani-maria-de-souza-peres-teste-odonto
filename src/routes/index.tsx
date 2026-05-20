@@ -208,6 +208,23 @@ function useTabLabels(clientId: string) {
   return { label, labels, save };
 }
 
+function useTabOrder(clientId: string) {
+  const storageKey = `tabOrder:${clientId}`;
+  const [order, setOrder] = useState<TabKey[]>(() => {
+    if (typeof window === "undefined") return TAB_ORDER;
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) ?? "[]") as TabKey[];
+      const valid = saved.filter((k) => TAB_ORDER.includes(k));
+      return [...valid, ...TAB_ORDER.filter((k) => !valid.includes(k))];
+    } catch { return TAB_ORDER; }
+  });
+  const save = (next: TabKey[]) => {
+    setOrder(next);
+    localStorage.setItem(storageKey, JSON.stringify(next));
+  };
+  return { order, save };
+}
+
 function TabsWithRename(props: {
   clientId: string;
   answers: ReturnType<typeof useChecklistStore>["answers"];
