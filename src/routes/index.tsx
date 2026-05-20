@@ -212,36 +212,6 @@ const TAB_ICONS_ALL: Record<TabKey, typeof FileText> = {
   tcle_pop: FileSignature,
 };
 
-function useTabLabels(clientId: string) {
-  const storageKey = `tabLabels:${clientId}`;
-  const [labels, setLabels] = useState<Record<string, string>>(() => {
-    if (typeof window === "undefined") return {};
-    try { return JSON.parse(localStorage.getItem(storageKey) ?? "{}"); } catch { return {}; }
-  });
-  const label = (k: TabKey) => labels[k] ?? DEFAULT_LABELS[k];
-  const save = (next: Record<string, string>) => {
-    setLabels(next);
-    localStorage.setItem(storageKey, JSON.stringify(next));
-  };
-  return { label, labels, save };
-}
-
-function useTabOrder(clientId: string) {
-  const storageKey = `tabOrder:${clientId}`;
-  const [order, setOrder] = useState<TabKey[]>(() => {
-    if (typeof window === "undefined") return TAB_ORDER;
-    try {
-      const saved = JSON.parse(localStorage.getItem(storageKey) ?? "[]") as TabKey[];
-      const valid = saved.filter((k) => TAB_ORDER.includes(k));
-      return [...valid, ...TAB_ORDER.filter((k) => !valid.includes(k))];
-    } catch { return TAB_ORDER; }
-  });
-  const save = (next: TabKey[]) => {
-    setOrder(next);
-    localStorage.setItem(storageKey, JSON.stringify(next));
-  };
-  return { order, save };
-}
 
 function TabsWithRename(props: {
   clientId: string;
