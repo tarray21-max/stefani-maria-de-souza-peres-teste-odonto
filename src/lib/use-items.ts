@@ -141,9 +141,14 @@ export function useItems(clientId: string | null) {
         return next;
       });
       const { error } = await supabase.from("item_positions").upsert(rows, { onConflict: "client_id,item_id" });
-      if (error) console.error("[item_positions] upsert", error);
+      if (error) {
+        console.error("[item_positions] upsert", error);
+        // Reverte recarregando do banco
+        await refresh();
+        throw error;
+      }
     },
-    [clientId],
+    [clientId, refresh],
   );
 
   return { items, custom, disabled, overrides, images, positions, loaded, refresh, imageUrlsFor, reorderCategory };
