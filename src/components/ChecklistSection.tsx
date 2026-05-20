@@ -149,7 +149,11 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved);
     setDragId(null); setOverId(null);
-    await reorderCategory(next);
+    try {
+      await reorderCategory(next);
+    } catch {
+      toast.error("Não foi possível salvar a nova ordem. Tente novamente.");
+    }
   };
 
   return (
