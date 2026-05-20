@@ -518,7 +518,7 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
 }
 
 
-function ItemImageDialog({ item, onClose, clientId, images, readOnly, onEdit }: {
+function ItemImageDialog({ item, onClose, clientId, images, readOnly, onEdit, onImageClick }: {
   item: ChecklistItem | null; onClose: () => void; clientId: string | null; images: ImageEntry[]; readOnly?: boolean; onEdit?: (it: ChecklistItem) => void; onImageClick?: (url: string) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
