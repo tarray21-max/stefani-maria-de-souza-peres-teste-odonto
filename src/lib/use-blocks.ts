@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Category } from "./checklist-data";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface Block {
   id: string;
@@ -7,25 +8,45 @@ export interface Block {
   itemIds: string[];
 }
 
-// v4: a semente do Bloco 1 (documentação) usa os 8 primeiros itens conforme
-// a ordem manual do usuário (item_positions), preservando perguntas customizadas.
-const storageKey = (clientId: string, category: Category) => `blocks:v4:${clientId}:${category}`;
+const storageKey = (clientId: string, category: Category) => `blocks:v5:${clientId}:${category}`;
+const blockId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `b_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
+
+interface BlockRow { id: string; name: string; item_ids: string[]; position: number }
 
 export function useBlocks(clientId: string | null, category: Category, categoryItemIds: string[]) {
   const key = clientId ? storageKey(clientId, category) : null;
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
-  // 1) Carrega do localStorage quando muda chave
+  // 1) Carrega do banco; localStorage fica apenas como fallback/migração local.
   useEffect(() => {
     if (!key) { setBlocks([]); setHydrated(false); return; }
-    const raw = typeof window !== "undefined" ? localStorage.getItem(key) : null;
-    if (raw) {
-      try { setBlocks(JSON.parse(raw) as Block[]); setHydrated(true); return; } catch { /* ignore */ }
-    }
-    setBlocks([]);
+    let cancelled = false;
     setHydrated(false);
-  }, [key]);
+    void (async () => {
+      const { data, error } = await (supabase as any)
+        .from("checklist_blocks")
+        .select("id,name,item_ids,position")
+        .eq("client_id", clientId)
+        .eq("category", category)
+        .order("position", { ascending: true });
+      if (cancelled) return;
+      if (!error && data && data.length > 0) {
+        const next = (data as BlockRow[]).map((r) => ({ id: r.id, name: r.name, itemIds: r.item_ids ?? [] }));
+        setBlocks(next);
+        localStorage.setItem(key, JSON.stringify(next));
+        setHydrated(true);
+        return;
+      }
+      const raw = typeof window !== "undefined" ? localStorage.getItem(key) : null;
+      if (raw) {
+        try { setBlocks(JSON.parse(raw) as Block[]); setHydrated(true); return; } catch { /* ignore */ }
+      }
+      setBlocks([]);
+      setHydrated(false);
+    })();
+    return () => { cancelled = true; };
+  }, [key, clientId, category]);
 
   // 2) Semeia uma única vez quando os itens carregam e não há nada salvo
   useEffect(() => {
@@ -33,23 +54,32 @@ export function useBlocks(clientId: string | null, category: Category, categoryI
     if (categoryItemIds.length === 0) return;
     const seed: Block[] = category === "documentacao"
       ? [{
-          id: `b_${Date.now()}`,
+          id: blockId(),
           name: "Bloco 1",
           itemIds: categoryItemIds.slice(0, 8),
         }]
       : [];
     setBlocks(seed);
-    if (seed.length) localStorage.setItem(key, JSON.stringify(seed));
+    if (seed.length) {
+      localStorage.setItem(key, JSON.stringify(seed));
+      void (supabase as any).from("checklist_blocks").upsert(seed.map((b, position) => ({ id: b.id, client_id: clientId, category, name: b.name, item_ids: b.itemIds, position })), { onConflict: "id" });
+    }
     setHydrated(true);
-  }, [key, hydrated, categoryItemIds, category]);
+  }, [key, hydrated, categoryItemIds, category, clientId]);
 
   const persist = useCallback((next: Block[]) => {
     setBlocks(next);
     if (key) localStorage.setItem(key, JSON.stringify(next));
-  }, [key]);
+    if (clientId) {
+      void (async () => {
+        await (supabase as any).from("checklist_blocks").delete().eq("client_id", clientId).eq("category", category).not("id", "in", `(${next.map((b) => b.id).join(",") || "00000000-0000-0000-0000-000000000000"})`);
+        if (next.length) await (supabase as any).from("checklist_blocks").upsert(next.map((b, position) => ({ id: b.id, client_id: clientId, category, name: b.name, item_ids: b.itemIds, position })), { onConflict: "id" });
+      })();
+    }
+  }, [key, clientId, category]);
 
   const addBlock = useCallback((name = "Novo bloco"): string => {
-    const id = `b_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const id = blockId();
     persist([...blocks, { id, name, itemIds: [] }]);
     return id;
   }, [blocks, persist]);
