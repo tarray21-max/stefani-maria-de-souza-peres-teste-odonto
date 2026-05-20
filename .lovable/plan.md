@@ -1,43 +1,77 @@
+# Plano
 
-## 1. Tipos de contrato personalizados (lista global por usuário)
+## 1. Copiar estrutura entre painéis
 
-**Banco**
-- Nova tabela `contract_types` (`id`, `owner_id`, `label`, `created_at`). RLS: dono vê/edita os próprios.
-- Nova coluna `clients.contract_type_label text` (opcional). Quando preenchida, substitui o rótulo do enum `tipo_contrato`. Mantém o enum para compat.
+Nova função `copyClientStructure(sourceId, targetIds[])` que copia, sem tocar nas respostas:
 
-**UI**
-- Novo diálogo "Gerenciar tipos de contrato" acessível pelo cadastro/edição da clínica (botão ao lado do Select).
-- O `Select` de tipo de contrato passa a listar: presets fixos ("Assessoria Odontológica", "Regularização Sanitária") + tipos personalizados do usuário. Ao selecionar um custom, gravamos `contract_type_label` (e mantemos `tipo_contrato` como default).
-- Exibições (`ClientIdentification`, sidebar, dashboard) usam `contract_type_label ?? labelDoEnum`.
+- `custom_items` (perguntas customizadas)
+- `checklist_blocks` (blocos e ordem)
+- `item_overrides` (edições de itens padrão)
+- `item_positions` (ordem dos itens)
+- `disabled_items` (itens desativados)
+- `service_matrix_items` (matriz TCLE×POP)
+- `contract_types` (tipos de contrato — já são por usuário, mas garantimos sincronia)
+- Rótulos das abas e ordem das abas (hoje em `localStorage` por clientId) → migrar para nova tabela `client_ui_prefs` (`client_id`, `tab_labels jsonb`, `tab_order jsonb`) para serem sincronizáveis e copiáveis.
 
-## 2. Compartilhamento por e-mail (papel: editor/viewer)
+Estratégia para evitar duplicatas no destino:
+- `custom_items`: deletar todos do destino e reinserir cópia (mantém `responses` porque elas usam `item_id` por texto/uuid — verificar; se houver risco, fazer upsert por `id` reciclado).
+- `checklist_blocks`: deletar e recriar com novos UUIDs preservando `item_ids` e `position`.
+- `item_overrides`, `item_positions`, `disabled_items`, `service_matrix_items`: upsert por chave natural (`client_id`+`item_id`).
 
-**Banco**
-- Nova tabela `client_invitations` (`id`, `client_id`, `email` lowercased, `role` member_role, `invited_by`, `created_at`, `accepted_at`). RLS:
-  - Owner/editor da clínica: select/insert/delete.
-  - Convidado: select próprias (where lower(email)=lower(jwt email)).
-- Função `accept_client_invitations()` SECURITY DEFINER: para o `auth.uid()` atual, lê seu e-mail, encontra convites pendentes, insere em `client_members` e marca `accepted_at`.
+UI:
+- Novo botão **"Aplicar estrutura a outros painéis"** no `ClientIdentification` (e no header de `ClientWorkspace`).
+- Abre `PropagateStructureDialog`: lista as outras clínicas com checkbox, botão "Aplicar".
+- Mostra confirmação ("Isso vai substituir a estrutura — perguntas, blocos, abas — das clínicas selecionadas. Respostas não serão alteradas.").
 
-**UI**
-- Botão "Compartilhar" no card de identificação da clínica → diálogo lista membros atuais (`client_members` + profile lookup) e convites pendentes, com formulário "email + papel".
-- Ao logar (efeito em `AuthProvider` ou `ClientProvider`) chama `accept_client_invitations()` e dá refresh.
+## 2. Acesso por conta (account-level)
 
-## 3. Realtime
+Mantém o convite por clínica existente. Adiciona um **segundo modo**:
 
-Habilitar publicação `supabase_realtime` para: `clients`, `client_members`, `client_invitations`, `responses`, `custom_items`, `checklist_blocks`, `disabled_items`, `item_overrides`, `item_positions`.
+### Schema
+- Nova tabela `account_members` (`owner_id`, `member_id`, `role`, `created_at`).
+- Nova tabela `account_invitations` (`owner_id`, `email`, `role`, `invited_by`, `accepted_at`).
+- Nova função `accept_account_invitations()` (estilo da de clínicas).
+- Nova função `is_account_member(_owner_id, _user_id)` SECURITY DEFINER.
 
-**Wiring**
-- `ClientProvider`: subscribe em `clients` + `client_members` → chama `refresh()` em qualquer mudança.
-- `use-checklist-store`, `use-blocks`, `use-items`: cada hook subscribe nas tabelas que lê, filtrado por `client_id=eq.${currentClientId}`, e reexecuta o fetch.
+### RLS
+Atualizar políticas em `clients` e dependentes (`custom_items`, `responses`, `checklist_blocks`, `item_*`, `disabled_items`, `service_matrix_items`, `monthly_snapshots`, `reset_log`, `visitor_links`, `client_ui_prefs`) para incluir OR `public.is_account_member(clients.owner_id, auth.uid())`.
 
-## Arquivos afetados (resumo)
-- Migration: contract_types, client_invitations, função accept, alter clients add column, alter publication realtime + RLS.
-- `src/lib/contract-types.ts` (novo hook).
-- `src/lib/use-invitations.ts` (novo hook).
-- `src/components/ContractTypesDialog.tsx` (novo).
-- `src/components/ShareClientDialog.tsx` (novo).
-- `src/components/ClientIdentification.tsx` + `ClientSidebar.tsx`: integrar gerenciador de tipos + botão compartilhar + exibir label custom.
-- `src/lib/client-context.tsx`: realtime + auto-aceite de convites no login.
-- `src/lib/use-checklist-store.ts`, `src/lib/use-blocks.ts`, `src/lib/use-items.ts`: subscriptions realtime.
+Para evitar reescrever 30+ políticas com subqueries que checam `clients.owner_id`, criar função:
+```sql
+public.can_access_client(_client_id, _user_id) -- membro direto OU account_member do owner
+```
+e substituir `is_client_member(...)` por `can_access_client(...)` nas políticas SELECT.
 
-Confirma para eu seguir?
+Para edição, `has_client_role(...)` ganha versão equivalente que aceita account_members com role `editor`/`owner`.
+
+### UI
+No `ClientSidebar`, novo botão **"Compartilhar conta inteira"** abrindo `AccountShareDialog`:
+- Listar membros da conta + convites pendentes
+- Convidar por e-mail (role editor/viewer)
+- Aceitação automática no login via `accept_account_invitations()` (chamada já existente expandida)
+
+No Dashboard / Sidebar, mostrar badge "Conta compartilhada por X" quando o `current.owner_id !== user.id` mas o usuário é account_member.
+
+### Realtime
+Adicionar `account_members` e `account_invitations` à publicação realtime e ao subscribe do `client-context` para refazer `refresh()` quando novos vínculos forem aceitos.
+
+## Arquivos
+
+**Migração** (`supabase/migrations/...sql`):
+- Cria `account_members`, `account_invitations`, `client_ui_prefs`
+- Cria `is_account_member`, `can_access_client`, `can_edit_client`, `accept_account_invitations`
+- Substitui políticas SELECT/INSERT/UPDATE/DELETE em todas as tabelas dependentes
+- Adiciona tabelas novas à publicação realtime
+
+**Novos arquivos**:
+- `src/lib/use-account-share.ts`
+- `src/lib/use-ui-prefs.ts` (substitui `useTabLabels`/`useTabOrder` baseado em localStorage)
+- `src/lib/copy-structure.ts`
+- `src/components/AccountShareDialog.tsx`
+- `src/components/PropagateStructureDialog.tsx`
+
+**Edições**:
+- `src/routes/index.tsx`: usar `use-ui-prefs`, botão de propagar
+- `src/components/ClientSidebar.tsx`: botão "Compartilhar conta"
+- `src/components/ClientIdentification.tsx`: botão "Aplicar a outros painéis"
+- `src/lib/client-context.tsx`: realtime de `account_members`, aceitar convites no login
