@@ -242,6 +242,10 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
         </DialogContent>
       </Dialog>
       <ContractTypesDialog open={typesOpen} onOpenChange={setTypesOpen} />
+      <AccountShareDialog open={accountShareOpen} onOpenChange={setAccountShareOpen} />
+      {current && (
+        <PropagateStructureDialog open={propagateOpen} onOpenChange={setPropagateOpen} sourceId={current.id} />
+      )}
     </Sidebar>
   );
 }
