@@ -35,7 +35,7 @@ export function useContractTypes() {
     refresh();
     if (!user) return;
     const ch = supabase
-      .channel(`contract_types-${user.id}`)
+      .channel(`contract_types-${user.id}-${Math.random().toString(36).slice(2, 10)}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "contract_types", filter: `owner_id=eq.${user.id}` },
