@@ -613,7 +613,7 @@ function ItemImageDialog({ item, onClose, clientId, images, readOnly, onEdit }: 
 
 
 function ItemFormDialog({ open, onClose, category, clientId, item, onSaved }: {
-  open: boolean; onClose: () => void; category: Category; clientId: string | null; item?: ChecklistItem | null; onSaved: () => void;
+  open: boolean; onClose: () => void; category: Category; clientId: string | null; item?: ChecklistItem | null; onSaved: (newId?: string) => void;
 }) {
   const [title, setTitle] = useState("");
   const [weight, setWeight] = useState(6);
@@ -636,9 +636,15 @@ function ItemFormDialog({ open, onClose, category, clientId, item, onSaved }: {
     if (!clientId) return toast.error("Cadastre uma clínica.");
     if (!title.trim()) return toast.error("Informe o título.");
     setBusy(true);
+    let createdId: string | undefined;
     if (!item) {
-      const { error } = await supabase.from("custom_items").insert({ client_id: clientId, category, title, weight, norma: norma || null, observacao: observacao || null, penalidade: penalidade || null });
+      const { data, error } = await supabase
+        .from("custom_items")
+        .insert({ client_id: clientId, category, title, weight, norma: norma || null, observacao: observacao || null, penalidade: penalidade || null })
+        .select("id")
+        .single();
       if (error) { setBusy(false); return toast.error(error.message); }
+      createdId = (data as { id: string } | null)?.id;
     } else if (item.id.startsWith("c_")) {
       const { error } = await supabase.from("custom_items").update({ title, weight, norma: norma || null, observacao: observacao || null, penalidade: penalidade || null }).eq("id", item.id.slice(2));
       if (error) { setBusy(false); return toast.error(error.message); }
@@ -650,7 +656,7 @@ function ItemFormDialog({ open, onClose, category, clientId, item, onSaved }: {
     }
     setBusy(false);
     toast.success("Salvo");
-    onSaved();
+    onSaved(createdId);
   };
 
   return (
