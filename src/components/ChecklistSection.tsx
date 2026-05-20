@@ -56,10 +56,11 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
   const [imageItem, setImageItem] = useState<ChecklistItem | null>(null);
   const [editItem, setEditItem] = useState<ChecklistItem | null>(null);
   /** undefined = não está adicionando; null = sem bloco; string = id do bloco alvo */
-  const [addInBlockId, setAddInBlockId] = useState<string | null | undefined>(undefined);
-  const [deleteItem, setDeleteItem] = useState<ChecklistItem | null>(null);
-  const [dragId, setDragId] = useState<string | null>(null);
-  const [overId, setOverId] = useState<string | null>(null);
+    const [addInBlockId, setAddInBlockId] = useState<string | null | undefined>(undefined);
+    const [deleteItem, setDeleteItem] = useState<ChecklistItem | null>(null);
+    const [dragId, setDragId] = useState<string | null>(null);
+    const [overId, setOverId] = useState<string | null>(null);
+    const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   const [filter, setFilter] = useState<FilterKind>("all");
 
