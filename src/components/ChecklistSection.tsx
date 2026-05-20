@@ -513,6 +513,11 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {lightboxUrl && (
+        <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4" onClick={() => setLightboxUrl(null)}>
+          <img src={lightboxUrl} alt="Ampliado" className="max-w-full max-h-full object-contain rounded shadow-2xl" />
+        </div>
+      )}
     </div>
   );
 }
