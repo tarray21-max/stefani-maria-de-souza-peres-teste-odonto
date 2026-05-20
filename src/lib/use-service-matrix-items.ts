@@ -134,8 +134,16 @@ export function useServiceMatrixItems(clientId: string | null) {
       disabled: false,
       position,
     }));
-    const { error } = await (supabase as any).from("service_matrix_items").upsert(rowsToSave, { onConflict: "id" });
-    if (error) throw error;
+    const defaultRows = rowsToSave.filter((row) => row.is_default);
+    const customRows = rowsToSave.filter((row) => !row.is_default);
+    if (defaultRows.length) {
+      const { error } = await (supabase as any).from("service_matrix_items").upsert(defaultRows, { onConflict: "client_id,default_key" });
+      if (error) throw error;
+    }
+    if (customRows.length) {
+      const { error } = await (supabase as any).from("service_matrix_items").upsert(customRows, { onConflict: "id" });
+      if (error) throw error;
+    }
     await refresh();
   }, [clientId, refresh]);
 
