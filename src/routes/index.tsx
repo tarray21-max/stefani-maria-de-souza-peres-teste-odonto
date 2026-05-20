@@ -19,6 +19,7 @@ import { ServiceMatrix } from "@/components/ServiceMatrix";
 import { CATEGORIES, computeMaturity, scoreColorVar, type BaseCategory, type Category } from "@/lib/checklist-data";
 import { useAuth } from "@/lib/auth-context";
 import { useClients } from "@/lib/client-context";
+import { useUiPrefs } from "@/lib/use-ui-prefs";
 
 export const Route = createFileRoute("/")({
   head: () => ({
