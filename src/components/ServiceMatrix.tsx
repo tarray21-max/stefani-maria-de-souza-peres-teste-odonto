@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -240,7 +240,7 @@ function ServiceFormDialog({ open, item, onClose, onSave }: { open: boolean; ite
   const [area, setArea] = useState<ServiceArea>("ambas");
   const [busy, setBusy] = useState(false);
 
-  useMemo(() => {
+  useEffect(() => {
     if (open) {
       setName(item?.name ?? "");
       setArea(item?.area ?? "ambas");
