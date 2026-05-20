@@ -10,6 +10,9 @@ export interface Block {
 
 const storageKey = (clientId: string, category: Category) => `blocks:v5:${clientId}:${category}`;
 const blockId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `b_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
+const legacyStorageKeys = (clientId: string, category: Category) => ["v4", "v3", "v2"].map((v) => `blocks:${v}:${clientId}:${category}`);
+const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+const normalizeBlocks = (rawBlocks: Block[]) => rawBlocks.map((b) => ({ ...b, id: isUuid(b.id) ? b.id : blockId() }));
 
 interface BlockRow { id: string; name: string; item_ids: string[]; position: number }
 
@@ -38,9 +41,18 @@ export function useBlocks(clientId: string | null, category: Category, categoryI
         setHydrated(true);
         return;
       }
-      const raw = typeof window !== "undefined" ? localStorage.getItem(key) : null;
+      const raw = typeof window !== "undefined"
+        ? localStorage.getItem(key) ?? legacyStorageKeys(clientId!, category).map((k) => localStorage.getItem(k)).find(Boolean) ?? null
+        : null;
       if (raw) {
-        try { setBlocks(JSON.parse(raw) as Block[]); setHydrated(true); return; } catch { /* ignore */ }
+        try {
+          const next = normalizeBlocks(JSON.parse(raw) as Block[]);
+          setBlocks(next);
+          localStorage.setItem(key, JSON.stringify(next));
+          if (next.length) void (supabase as any).from("checklist_blocks").upsert(next.map((b, position) => ({ id: b.id, client_id: clientId, category, name: b.name, item_ids: b.itemIds, position })), { onConflict: "id" });
+          setHydrated(true);
+          return;
+        } catch { /* ignore */ }
       }
       setBlocks([]);
       setHydrated(false);
