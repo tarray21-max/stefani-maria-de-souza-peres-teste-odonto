@@ -1,5 +1,5 @@
 import { CATEGORIES, computeMaturity, scoreColorVar, type Category, type ChecklistItem, type ResponseMap } from "@/lib/checklist-data";
-import type { ClientRow } from "@/lib/client-context";
+import { contractLabel, type ClientRow } from "@/lib/client-context";
 import { formatCNPJ, formatPhone } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -16,11 +16,6 @@ interface Props {
   /** Ordem das categorias a exibir nos cards */
   categoryOrder?: Category[];
 }
-
-const CONTRATO_LABEL: Record<ClientRow["tipo_contrato"], string> = {
-  assessoria_odontologica: "Assessoria Odontológica",
-  regularizacao_sanitaria: "Regularização Sanitária",
-};
 
 const DEFAULT_CATEGORY_SHORT: Record<Category, string> = {
   documentacao: "Documentação",
@@ -61,7 +56,7 @@ export function Dashboard({ answers, items, client, categoryLabels, categoryOrde
         { icon: User, label: "Responsável Técnico", value: client.profissional_responsavel },
         { icon: Stethoscope, label: "Especialidade", value: client.especialidade },
         { icon: Hash, label: "CNPJ", value: formatCNPJ(client.cnpj) },
-        { icon: Briefcase, label: "Contrato", value: CONTRATO_LABEL[client.tipo_contrato] },
+        { icon: Briefcase, label: "Contrato", value: contractLabel(client) },
         { icon: Phone, label: "Telefone", value: formatPhone(client.telefone) },
         { icon: MapPin, label: "Endereço", value: client.endereco },
       ].filter((i) => i.value && String(i.value).trim().length > 0)

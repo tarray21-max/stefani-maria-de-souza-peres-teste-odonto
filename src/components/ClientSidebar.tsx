@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useClients, type ClientRow } from "@/lib/client-context";
+import { useContractTypes, PRESET_CONTRACT_TYPES } from "@/lib/contract-types";
+import { ContractTypesDialog } from "./ContractTypesDialog";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCNPJ, formatPhone } from "@/lib/format";
@@ -24,8 +26,11 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const [editing, setEditing] = useState<Partial<ClientRow> | null>(null);
+  const [typesOpen, setTypesOpen] = useState(false);
+  const { items: contractTypes } = useContractTypes();
+  const PRESET_VALUES = new Set(PRESET_CONTRACT_TYPES.map((p) => p.value));
 
-  const startNew = () => setEditing({ area: "odontologia", tipo_contrato: "assessoria_odontologica", nome: "" });
+  const startNew = () => setEditing({ area: "odontologia", tipo_contrato: "assessoria_odontologica", contract_type_label: null, nome: "" });
   const startEdit = (c: ClientRow) => setEditing(c);
 
   useEffect(() => {
@@ -44,6 +49,7 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
   const save = async () => {
     if (!user || !editing) return;
     if (!editing.nome?.trim()) return toast.error("Informe o nome da clínica");
+    const tipo = (PRESET_VALUES.has(editing.tipo_contrato ?? "") ? editing.tipo_contrato : "assessoria_odontologica") as "assessoria_odontologica" | "regularizacao_sanitaria";
     const payload = {
       nome: editing.nome,
       cnpj: editing.cnpj ?? null,
@@ -52,7 +58,8 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
       especialidade: editing.especialidade ?? null,
       endereco: editing.endereco ?? null,
       telefone: editing.telefone ?? null,
-      tipo_contrato: (editing.tipo_contrato ?? "assessoria_odontologica") as "assessoria_odontologica" | "regularizacao_sanitaria",
+      tipo_contrato: tipo,
+      contract_type_label: editing.contract_type_label ?? null,
     };
     if (editing.id) {
       const { error } = await supabase.from("clients").update(payload).eq("id", editing.id);
@@ -180,12 +187,31 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
               <div><Label>Especialidade</Label><Input value={editing.especialidade ?? ""} onChange={(e) => setEditing({ ...editing, especialidade: e.target.value })} /></div>
               <div><Label>Telefone</Label><Input inputMode="tel" placeholder="(00) 00000-0000" value={formatPhone(editing.telefone ?? "")} onChange={(e) => setEditing({ ...editing, telefone: formatPhone(e.target.value) })} /></div>
               <div className="md:col-span-2">
-                <Label>Tipo de contrato</Label>
-                <Select value={editing.tipo_contrato ?? "assessoria_odontologica"} onValueChange={(v) => setEditing({ ...editing, tipo_contrato: v as "assessoria_odontologica" | "regularizacao_sanitaria" })}>
+                <div className="flex items-center justify-between">
+                  <Label>Tipo de contrato</Label>
+                  <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setTypesOpen(true)}>
+                    Gerenciar
+                  </Button>
+                </div>
+                <Select
+                  value={editing.contract_type_label ? `custom:${editing.contract_type_label}` : (editing.tipo_contrato ?? "assessoria_odontologica")}
+                  onValueChange={(v) => {
+                    if (v.startsWith("custom:")) {
+                      setEditing({ ...editing, contract_type_label: v.slice("custom:".length) });
+                    } else {
+                      setEditing({ ...editing, tipo_contrato: v as "assessoria_odontologica" | "regularizacao_sanitaria", contract_type_label: null });
+                    }
+                  }}
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="assessoria_odontologica">Assessoria Odontológica</SelectItem>
-                    <SelectItem value="regularizacao_sanitaria">Regularização Sanitária</SelectItem>
+                    {PRESET_CONTRACT_TYPES.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                    ))}
+                    {contractTypes.length > 0 && <SelectSeparator />}
+                    {contractTypes.map((t) => (
+                      <SelectItem key={t.id} value={`custom:${t.label}`}>{t.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -201,6 +227,7 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ContractTypesDialog open={typesOpen} onOpenChange={setTypesOpen} />
     </Sidebar>
   );
 }

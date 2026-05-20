@@ -1,127 +1,43 @@
-## Visão geral
 
-Vou ativar o Lovable Cloud (banco + auth) e reconstruir o painel para suportar múltiplos clientes, sincronização em tempo real, link de visitante, relatório mensal e todas as melhorias de UX pedidas. Entregarei em uma única implementação completa.
+## 1. Tipos de contrato personalizados (lista global por usuário)
 
-## 1. Backend (Lovable Cloud)
+**Banco**
+- Nova tabela `contract_types` (`id`, `owner_id`, `label`, `created_at`). RLS: dono vê/edita os próprios.
+- Nova coluna `clients.contract_type_label text` (opcional). Quando preenchida, substitui o rótulo do enum `tipo_contrato`. Mantém o enum para compat.
 
-**Tabelas:**
-- `clients` — dados da clínica (nome, CNPJ, profissional, área, especialidade, endereço, telefone, tipo de contrato, owner_id).
-- `client_members` — vincula usuários ao cliente com `role` (`owner` | `editor` | `viewer`).
-- `responses` — uma linha por item do checklist por cliente: `client_id`, `item_id`, `answer` (sim/nao/na), `quality` (bom/ruim), `justification` (texto), `updated_at`.
-- `monthly_snapshots` — snapshot mensal automático: `client_id`, `month` (YYYY-MM), `score`, `score_by_category` (jsonb), `created_at`.
-- `visitor_links` — tokens de acesso externo: `client_id`, `token`, `mode` (view/edit), `expires_at`.
-- `reset_log` — auditoria das resets: `client_id`, `user_id`, `justification`, `created_at`.
+**UI**
+- Novo diálogo "Gerenciar tipos de contrato" acessível pelo cadastro/edição da clínica (botão ao lado do Select).
+- O `Select` de tipo de contrato passa a listar: presets fixos ("Assessoria Odontológica", "Regularização Sanitária") + tipos personalizados do usuário. Ao selecionar um custom, gravamos `contract_type_label` (e mantemos `tipo_contrato` como default).
+- Exibições (`ClientIdentification`, sidebar, dashboard) usam `contract_type_label ?? labelDoEnum`.
 
-**Auth:** email/senha + Google. Quem cria o primeiro cliente vira owner.
+## 2. Compartilhamento por e-mail (papel: editor/viewer)
 
-**RLS:** todas as tabelas protegidas. Usuário só vê clientes onde é membro. Visitante usa token público que dá acesso a um cliente específico (via server function que valida o token, não RLS direto).
+**Banco**
+- Nova tabela `client_invitations` (`id`, `client_id`, `email` lowercased, `role` member_role, `invited_by`, `created_at`, `accepted_at`). RLS:
+  - Owner/editor da clínica: select/insert/delete.
+  - Convidado: select próprias (where lower(email)=lower(jwt email)).
+- Função `accept_client_invitations()` SECURITY DEFINER: para o `auth.uid()` atual, lê seu e-mail, encontra convites pendentes, insere em `client_members` e marca `accepted_at`.
 
-**Realtime:** habilitado em `responses` para sincronização instantânea entre painel principal e link de visitante.
+**UI**
+- Botão "Compartilhar" no card de identificação da clínica → diálogo lista membros atuais (`client_members` + profile lookup) e convites pendentes, com formulário "email + papel".
+- Ao logar (efeito em `AuthProvider` ou `ClientProvider`) chama `accept_client_invitations()` e dá refresh.
 
-## 2. Identificação do Cliente (Dashboard topo)
+## 3. Realtime
 
-Card de identificação editável com: Nome da Clínica, Profissional Responsável, CNPJ, Área (select Odontologia/Medicina) + Especialidade (texto), Endereço, Telefone, Tipo de Contrato (Assessoria Odontológica / Regularização Sanitária). Salva em `clients`.
+Habilitar publicação `supabase_realtime` para: `clients`, `client_members`, `client_invitations`, `responses`, `custom_items`, `checklist_blocks`, `disabled_items`, `item_overrides`, `item_positions`.
 
-Seletor de cliente no header (caso o usuário gerencie mais de uma clínica).
+**Wiring**
+- `ClientProvider`: subscribe em `clients` + `client_members` → chama `refresh()` em qualquer mudança.
+- `use-checklist-store`, `use-blocks`, `use-items`: cada hook subscribe nas tabelas que lê, filtrado por `client_id=eq.${currentClientId}`, e reexecuta o fetch.
 
-## 3. Refino da Interface
+## Arquivos afetados (resumo)
+- Migration: contract_types, client_invitations, função accept, alter clients add column, alter publication realtime + RLS.
+- `src/lib/contract-types.ts` (novo hook).
+- `src/lib/use-invitations.ts` (novo hook).
+- `src/components/ContractTypesDialog.tsx` (novo).
+- `src/components/ShareClientDialog.tsx` (novo).
+- `src/components/ClientIdentification.tsx` + `ClientSidebar.tsx`: integrar gerenciador de tipos + botão compartilhar + exibir label custom.
+- `src/lib/client-context.tsx`: realtime + auto-aceite de convites no login.
+- `src/lib/use-checklist-store.ts`, `src/lib/use-blocks.ts`, `src/lib/use-items.ts`: subscriptions realtime.
 
-**Visão Consolidada unificada:** ícone odontológico (dente estilizado SVG) centralizado com o % global de maturidade dentro. Substitui o gauge separado + shield builder por uma única visualização forte. Stats e gargalos abaixo.
-
-**Por item do checklist, adicionar:**
-- **Justificativa/Implementação** — textarea expansível.
-- **Avaliação Qualitativa** — toggle Bom/Ruim. Se "Ruim", item conta como 0.5 no cálculo (50% do peso).
-- **Ícone de norma (alerta)** — popover ao hover mostra: norma técnica + consequência jurídico-financeira.
-- **Modal de imagem de referência** — clique no nome abre modal com placeholder ("Imagem a ser anexada") e descrição do que observar.
-
-**Recálculo do score:** `(simBom*1 + simRuim*0.5) / aplicáveis * 100`.
-
-## 4. Conteúdo normativo (proposta inicial)
-
-Vou mapear normas para os itens principais. Exemplos:
-- Alvará Sanitário → RDC 50/2002 + Lei 6.437/77 → "Interdição do estabelecimento e multa".
-- Prontuário → Res. CFO 118/2012 + CFM 1.821/2007 → "Inversão do ônus da prova em processo judicial; presunção contra o profissional".
-- PGRSS → RDC 222/2018 → "Multa sanitária + responsabilidade ambiental".
-- TCLE → Código de Ética CFO Art. 9º + CDC → "Nulidade do consentimento, responsabilidade civil objetiva".
-- LGPD → Lei 13.709/2018 → "Multa até 2% faturamento, limitada a R$ 50 milhões".
-- EPI → NR-32 → "Auto de infração trabalhista + responsabilidade por acidente".
-
-(Vou cobrir todos os itens; usuário revisa depois.)
-
-## 5. Trava de Reset
-
-Botão "Reiniciar" abre AlertDialog em 2 etapas:
-1. Aviso forte ("Esta ação apagará todas as respostas").
-2. Campo obrigatório de justificativa (mínimo 20 caracteres). Só habilita o botão "Confirmar Reset" se preenchido.
-3. Grava em `reset_log` com user_id e justificativa antes de limpar `responses`.
-
-## 6. Ajustes nos itens
-
-- Ordenação alfabética automática por título em **Assistencial**, **Pessoas e Parcerias** e **Sanitária** (mantendo N/A no fim como já existe).
-- Search bar no topo de cada aba (filtra por título, em tempo real).
-- Renomear "Ficha de Evolução Clínica" → **"Prontuário"**.
-- Pessoas e Parcerias item 3 → **"Contrato de prestação de serviços sem vínculo empregatício"**.
-- Pessoas e Parcerias item 5 → **"Contrato de Parcerias/Cessão de Sala"**.
-
-## 7. Expansão Assistencial
-
-Adicionar item geral: **"Termo de Declaração de Intercorrências de Outros Profissionais"**.
-
-Adicionar à matriz TCLE/POP os serviços: Limpeza de Pele, Bioestimulador Corporal, Ácido Hialurônico Corporal, HIPRO, Laser Adhara, Lavieen, Pison, Radiofrequência, Ultraformer III, MPT.
-
-## 8. Relatório Mensal (nova aba)
-
-- Aba "Relatório de Evolução".
-- Server function diária verifica se já existe snapshot para o mês corrente; se não, cria.
-- Gráfico de linha (Recharts) com score por mês.
-- Card comparativo: "Mês atual: X% / Mês anterior: Y% / Δ +Z pp".
-- Breakdown por categoria.
-- Histórico começa do momento da implementação (sem dados retroativos, conforme escolhido).
-
-## 9. Link de Visitante + Sincronização em Tempo Real
-
-- Botão "Gerar link de visitante" no header → cria token em `visitor_links` (modo view ou edit, validade configurável).
-- Rota pública `/v/$token` carrega o painel sem auth, validando o token via server function.
-- Mutações do visitante passam por server function que valida token antes de gravar (RLS bypass controlado).
-- Painel principal e visitante assinam o canal Realtime de `responses` filtrado pelo `client_id` → mudanças aparecem instantaneamente em ambos.
-
-## 10. Migração de dados existentes
-
-Detecto se há `localStorage` com a chave atual e ofereço importar como respostas iniciais do primeiro cliente criado.
-
----
-
-## Detalhes técnicos
-
-- **Stack:** Lovable Cloud (Supabase), TanStack Start, server functions com `requireSupabaseAuth`, Realtime channels.
-- **Cálculo de score atualizado:**
-  ```ts
-  const effectiveSim = items.reduce((acc, it) => {
-    const a = answers[it.id];
-    if (a?.answer !== "sim") return acc;
-    return acc + (a.quality === "ruim" ? 0.5 : 1);
-  }, 0);
-  const score = applicable > 0 ? (effectiveSim / applicable) * 100 : 0;
-  ```
-- **Snapshot mensal:** `getOrCreateMonthlySnapshot` chamado no carregamento do dashboard.
-- **Visitante:** rota `/v/$token` fora de `_authenticated`, server function `getStateByToken` / `setAnswerByToken`.
-- **Ícone do dashboard:** SVG inline de dente com texto centralizado (sem dependência externa).
-
-## Ordem de execução
-
-1. Habilitar Lovable Cloud + criar tabelas + RLS.
-2. Atualizar `checklist-data.ts` (renomeações, novos itens, normas, ordem alfabética).
-3. Criar server functions (clientes, respostas, snapshots, visitante, reset).
-4. Refatorar store para Cloud + migração do localStorage.
-5. Auth (login/signup) + rota `/_authenticated`.
-6. Reconstruir Dashboard (ícone unificado, identificação do cliente).
-7. Reconstruir ChecklistSection (justificativa, qualitativa, normas, modal imagem, busca).
-8. Trava de reset com 2 etapas.
-9. Aba Relatório de Evolução.
-10. Link de visitante + Realtime.
-
-## O que NÃO está no escopo
-
-- Imagens reais nos modais (placeholders por enquanto, conforme escolhido).
-- Histórico retroativo (snapshots começam do momento da implementação).
-- Integração com EasyJur (é um prompt para outra ferramenta, fora do app).
+Confirma para eu seguir?

@@ -21,26 +21,32 @@ export function useBlocks(clientId: string | null, category: Category, categoryI
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
+  const loadFromDb = useCallback(async () => {
+    if (!clientId || !key) return false;
+    const { data, error } = await (supabase as any)
+      .from("checklist_blocks")
+      .select("id,name,item_ids,position")
+      .eq("client_id", clientId)
+      .eq("category", category)
+      .order("position", { ascending: true });
+    if (!error && data && data.length > 0) {
+      const next = (data as BlockRow[]).map((r) => ({ id: r.id, name: r.name, itemIds: r.item_ids ?? [] }));
+      setBlocks(next);
+      localStorage.setItem(key, JSON.stringify(next));
+      setHydrated(true);
+      return true;
+    }
+    return false;
+  }, [clientId, category, key]);
+
   // 1) Carrega do banco; localStorage fica apenas como fallback/migração local.
   useEffect(() => {
     if (!key) { setBlocks([]); setHydrated(false); return; }
     let cancelled = false;
     setHydrated(false);
     void (async () => {
-      const { data, error } = await (supabase as any)
-        .from("checklist_blocks")
-        .select("id,name,item_ids,position")
-        .eq("client_id", clientId)
-        .eq("category", category)
-        .order("position", { ascending: true });
-      if (cancelled) return;
-      if (!error && data && data.length > 0) {
-        const next = (data as BlockRow[]).map((r) => ({ id: r.id, name: r.name, itemIds: r.item_ids ?? [] }));
-        setBlocks(next);
-        localStorage.setItem(key, JSON.stringify(next));
-        setHydrated(true);
-        return;
-      }
+      const ok = await loadFromDb();
+      if (cancelled || ok) return;
       const raw = typeof window !== "undefined"
         ? localStorage.getItem(key) ?? legacyStorageKeys(clientId!, category).map((k) => localStorage.getItem(k)).find(Boolean) ?? null
         : null;
@@ -58,7 +64,22 @@ export function useBlocks(clientId: string | null, category: Category, categoryI
       setHydrated(false);
     })();
     return () => { cancelled = true; };
-  }, [key, clientId, category]);
+  }, [key, clientId, category, loadFromDb]);
+
+  // Realtime: recarrega quando outro membro altera blocos da mesma clínica/categoria
+  useEffect(() => {
+    if (!clientId) return;
+    const ch = (supabase as any)
+      .channel(`checklist_blocks-${clientId}-${category}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "checklist_blocks", filter: `client_id=eq.${clientId}` },
+        () => { void loadFromDb(); },
+      )
+      .subscribe();
+    return () => { (supabase as any).removeChannel(ch); };
+  }, [clientId, category, loadFromDb]);
+
 
   // 2) Semeia uma única vez quando os itens carregam e não há nada salvo
   useEffect(() => {

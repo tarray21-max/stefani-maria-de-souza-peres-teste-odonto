@@ -13,6 +13,7 @@ export interface ClientRow {
   endereco: string | null;
   telefone: string | null;
   tipo_contrato: "assessoria_odontologica" | "regularizacao_sanitaria";
+  contract_type_label: string | null;
 }
 
 interface ClientCtx {
@@ -56,9 +57,43 @@ export function ClientProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, [user]);
 
+  // Aceita convites pendentes ao logar, depois carrega a lista.
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    if (!user) {
+      refresh();
+      return;
+    }
+    void (async () => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.rpc as any)("accept_client_invitations");
+      } catch {
+        // ignore
+      }
+      await refresh();
+    })();
+  }, [user, refresh]);
+
+  // Realtime: lista de clínicas e membros (próprios ou recém aceitos).
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase
+      .channel(`clients-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "clients" },
+        () => refresh(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "client_members", filter: `user_id=eq.${user.id}` },
+        () => refresh(),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [user, refresh]);
 
   // Default current
   useEffect(() => {
@@ -86,3 +121,8 @@ export function ClientProvider({ children }: { children: ReactNode }) {
 }
 
 export const useClients = () => useContext(Ctx);
+
+export function contractLabel(c: Pick<ClientRow, "tipo_contrato" | "contract_type_label">): string {
+  if (c.contract_type_label && c.contract_type_label.trim()) return c.contract_type_label;
+  return c.tipo_contrato === "assessoria_odontologica" ? "Assessoria Odontológica" : "Regularização Sanitária";
+}

@@ -47,6 +47,36 @@ export type Database = {
         }
         Relationships: []
       }
+      client_invitations: {
+        Row: {
+          accepted_at: string | null
+          client_id: string
+          created_at: string
+          email: string
+          id: string
+          invited_by: string
+          role: Database["public"]["Enums"]["member_role"]
+        }
+        Insert: {
+          accepted_at?: string | null
+          client_id: string
+          created_at?: string
+          email: string
+          id?: string
+          invited_by: string
+          role?: Database["public"]["Enums"]["member_role"]
+        }
+        Update: {
+          accepted_at?: string | null
+          client_id?: string
+          created_at?: string
+          email?: string
+          id?: string
+          invited_by?: string
+          role?: Database["public"]["Enums"]["member_role"]
+        }
+        Relationships: []
+      }
       client_members: {
         Row: {
           client_id: string
@@ -83,6 +113,7 @@ export type Database = {
         Row: {
           area: Database["public"]["Enums"]["area_atuacao"]
           cnpj: string | null
+          contract_type_label: string | null
           created_at: string
           endereco: string | null
           especialidade: string | null
@@ -97,6 +128,7 @@ export type Database = {
         Insert: {
           area?: Database["public"]["Enums"]["area_atuacao"]
           cnpj?: string | null
+          contract_type_label?: string | null
           created_at?: string
           endereco?: string | null
           especialidade?: string | null
@@ -111,6 +143,7 @@ export type Database = {
         Update: {
           area?: Database["public"]["Enums"]["area_atuacao"]
           cnpj?: string | null
+          contract_type_label?: string | null
           created_at?: string
           endereco?: string | null
           especialidade?: string | null
@@ -121,6 +154,27 @@ export type Database = {
           telefone?: string | null
           tipo_contrato?: Database["public"]["Enums"]["tipo_contrato"]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      contract_types: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          owner_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          owner_id?: string
         }
         Relationships: []
       }
@@ -512,6 +566,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_client_invitations: { Args: never; Returns: number }
       has_client_role: {
         Args: {
           _client_id: string
