@@ -17,8 +17,10 @@ import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCNPJ, formatPhone } from "@/lib/format";
 import { toast } from "sonner";
-import { Building2, Plus, Pencil, Trash2, LogOut } from "lucide-react";
+import { Building2, Plus, Pencil, Trash2, LogOut, Users, Copy } from "lucide-react";
 import brandLogo from "@/assets/bs-logo-on-white.jpg";
+import { AccountShareDialog } from "./AccountShareDialog";
+import { PropagateStructureDialog } from "./PropagateStructureDialog";
 
 export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
   const { clients, current, setCurrentId, refresh } = useClients();
@@ -27,6 +29,8 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
   const collapsed = state === "collapsed";
   const [editing, setEditing] = useState<Partial<ClientRow> | null>(null);
   const [typesOpen, setTypesOpen] = useState(false);
+  const [accountShareOpen, setAccountShareOpen] = useState(false);
+  const [propagateOpen, setPropagateOpen] = useState(false);
   const { items: contractTypes } = useContractTypes();
   const PRESET_VALUES = new Set(PRESET_CONTRACT_TYPES.map((p) => p.value));
 
@@ -156,7 +160,17 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border/60 p-2">
+      <SidebarFooter className="border-t border-sidebar-border/60 p-2 space-y-1">
+        <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => setAccountShareOpen(true)} title="Compartilhar conta inteira">
+          <Users className="w-4 h-4" />
+          {!collapsed && <span className="ml-2">Compartilhar conta</span>}
+        </Button>
+        {current && (
+          <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => setPropagateOpen(true)} title="Aplicar estrutura desta clínica em outros painéis">
+            <Copy className="w-4 h-4" />
+            {!collapsed && <span className="ml-2">Aplicar estrutura</span>}
+          </Button>
+        )}
         <Button variant="ghost" size="sm" className="w-full justify-start" onClick={onSignOut}>
           <LogOut className="w-4 h-4" />
           {!collapsed && <span className="ml-2">Sair</span>}
@@ -228,6 +242,10 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
         </DialogContent>
       </Dialog>
       <ContractTypesDialog open={typesOpen} onOpenChange={setTypesOpen} />
+      <AccountShareDialog open={accountShareOpen} onOpenChange={setAccountShareOpen} />
+      {current && (
+        <PropagateStructureDialog open={propagateOpen} onOpenChange={setPropagateOpen} sourceId={current.id} />
+      )}
     </Sidebar>
   );
 }

@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          id: string
+          invited_by: string
+          owner_id: string
+          role: Database["public"]["Enums"]["member_role"]
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          invited_by: string
+          owner_id: string
+          role?: Database["public"]["Enums"]["member_role"]
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          invited_by?: string
+          owner_id?: string
+          role?: Database["public"]["Enums"]["member_role"]
+        }
+        Relationships: []
+      }
+      account_members: {
+        Row: {
+          created_at: string
+          id: string
+          member_id: string
+          owner_id: string
+          role: Database["public"]["Enums"]["member_role"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_id: string
+          owner_id: string
+          role?: Database["public"]["Enums"]["member_role"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_id?: string
+          owner_id?: string
+          role?: Database["public"]["Enums"]["member_role"]
+        }
+        Relationships: []
+      }
       checklist_blocks: {
         Row: {
           category: string
@@ -108,6 +162,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      client_ui_prefs: {
+        Row: {
+          client_id: string
+          tab_labels: Json
+          tab_order: Json
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          tab_labels?: Json
+          tab_order?: Json
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          tab_labels?: Json
+          tab_order?: Json
+          updated_at?: string
+        }
+        Relationships: []
       }
       clients: {
         Row: {
@@ -566,13 +641,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_account_invitations: { Args: never; Returns: number }
       accept_client_invitations: { Args: never; Returns: number }
+      can_access_client: {
+        Args: { _client_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_edit_client: {
+        Args: { _client_id: string; _user_id: string }
+        Returns: boolean
+      }
       has_client_role: {
         Args: {
           _client_id: string
           _roles: Database["public"]["Enums"]["member_role"][]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_account_editor: {
+        Args: { _owner_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_account_member: {
+        Args: { _owner_id: string; _user_id: string }
         Returns: boolean
       }
       is_client_member: {
