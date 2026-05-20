@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { LayoutDashboard, FileText, Building, Wrench, SprayCan, Boxes, Building2, Sun, Moon, FileSignature, Pencil } from "lucide-react";
+import { LayoutDashboard, FileText, Building, Wrench, SprayCan, Boxes, Building2, Sun, Moon, FileSignature, Pencil, ArrowDown, ArrowUp, GripVertical } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ import { EvolutionTimeline } from "@/components/EvolutionTimeline";
 import { VisitorLinks } from "@/components/VisitorLinks";
 import { ClientSidebar } from "@/components/ClientSidebar";
 import { ServiceMatrix } from "@/components/ServiceMatrix";
-import { CATEGORIES, computeMaturity, scoreColorVar, type Category } from "@/lib/checklist-data";
+import { CATEGORIES, computeMaturity, scoreColorVar, type BaseCategory, type Category } from "@/lib/checklist-data";
 import { useAuth } from "@/lib/auth-context";
 import { useClients } from "@/lib/client-context";
 
@@ -30,7 +30,7 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const TAB_ICONS: Record<Category, typeof FileText> = {
+const TAB_ICONS: Record<BaseCategory, typeof FileText> = {
   documentacao: FileText,
   infraestrutura: Building,
   procedimentos: Wrench,
