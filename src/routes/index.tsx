@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { LayoutDashboard, FileText, Building, Wrench, SprayCan, Boxes, Building2, Sun, Moon, FileSignature, Pencil } from "lucide-react";
+import { LayoutDashboard, FileText, Building, Wrench, SprayCan, Boxes, Building2, Sun, Moon, FileSignature, Pencil, ArrowDown, ArrowUp, GripVertical } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ import { EvolutionTimeline } from "@/components/EvolutionTimeline";
 import { VisitorLinks } from "@/components/VisitorLinks";
 import { ClientSidebar } from "@/components/ClientSidebar";
 import { ServiceMatrix } from "@/components/ServiceMatrix";
-import { CATEGORIES, computeMaturity, scoreColorVar, type Category } from "@/lib/checklist-data";
+import { CATEGORIES, computeMaturity, scoreColorVar, type BaseCategory, type Category } from "@/lib/checklist-data";
 import { useAuth } from "@/lib/auth-context";
 import { useClients } from "@/lib/client-context";
 
@@ -30,7 +30,7 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const TAB_ICONS: Record<Category, typeof FileText> = {
+const TAB_ICONS: Record<BaseCategory, typeof FileText> = {
   documentacao: FileText,
   infraestrutura: Building,
   procedimentos: Wrench,
@@ -208,6 +208,23 @@ function useTabLabels(clientId: string) {
   return { label, labels, save };
 }
 
+function useTabOrder(clientId: string) {
+  const storageKey = `tabOrder:${clientId}`;
+  const [order, setOrder] = useState<TabKey[]>(() => {
+    if (typeof window === "undefined") return TAB_ORDER;
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) ?? "[]") as TabKey[];
+      const valid = saved.filter((k) => TAB_ORDER.includes(k));
+      return [...valid, ...TAB_ORDER.filter((k) => !valid.includes(k))];
+    } catch { return TAB_ORDER; }
+  });
+  const save = (next: TabKey[]) => {
+    setOrder(next);
+    localStorage.setItem(storageKey, JSON.stringify(next));
+  };
+  return { order, save };
+}
+
 function TabsWithRename(props: {
   clientId: string;
   answers: ReturnType<typeof useChecklistStore>["answers"];
@@ -222,7 +239,8 @@ function TabsWithRename(props: {
   reorderCategory: ReturnType<typeof useItems>["reorderCategory"];
 }) {
   const { clientId, answers, items, current, setAnswer, setQuality, setJustification, refreshItems, imageUrlsFor, positions, reorderCategory } = props;
-  const { label, labels, save } = useTabLabels(clientId);
+  const { label, labels, save: saveLabels } = useTabLabels(clientId);
+  const { order, save: saveOrder } = useTabOrder(clientId);
   const [renameOpen, setRenameOpen] = useState(false);
   const [draft, setDraft] = useState<Record<string, string>>({});
 
@@ -239,15 +257,25 @@ function TabsWithRename(props: {
       const t = v.trim();
       if (t && t !== DEFAULT_LABELS[k as TabKey]) cleaned[k] = t;
     });
-    save(cleaned);
+    saveLabels(cleaned);
     setRenameOpen(false);
+  };
+
+  const moveTab = (tab: TabKey, direction: -1 | 1) => {
+    const idx = order.indexOf(tab);
+    const to = idx + direction;
+    if (idx < 0 || to < 0 || to >= order.length) return;
+    const next = [...order];
+    const [moved] = next.splice(idx, 1);
+    next.splice(to, 0, moved);
+    saveOrder(next);
   };
 
   return (
     <Tabs defaultValue="dashboard" className="w-full">
       <div className="flex items-start gap-2">
         <TabsList className="flex-1 h-auto p-1 bg-muted/60 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-1">
-          {TAB_ORDER.map((k) => {
+          {order.map((k) => {
             const Icon = TAB_ICONS_ALL[k];
             return (
               <TabsTrigger key={k} value={k} className="flex items-center gap-2 py-2 data-[state=active]:bg-card data-[state=active]:shadow-sm">
@@ -276,7 +304,8 @@ function TabsWithRename(props: {
 
       <TabsContent value="tcle_pop" className="mt-5">
         <SectionHeader title={label("tcle_pop")} subtitle="Indique se cada serviço prestado possui TCLE e POP correspondentes." />
-        <ServiceMatrix answers={answers} setAnswer={setAnswer} />
+        <ChecklistSection category="tcle_pop" items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} positions={positions} reorderCategory={reorderCategory} />
+        <ServiceMatrix answers={answers} setAnswer={setAnswer} clientId={clientId} />
       </TabsContent>
 
       <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
@@ -285,14 +314,23 @@ function TabsWithRename(props: {
             <DialogTitle>Renomear abas</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            {TAB_ORDER.map((k) => (
-              <div key={k} className="grid grid-cols-[120px_1fr] items-center gap-3">
+            {order.map((k, idx) => (
+              <div key={k} className="grid grid-cols-[28px_120px_1fr_auto] items-center gap-3">
+                <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />
                 <Label className="text-xs text-muted-foreground">{DEFAULT_LABELS[k]}</Label>
                 <Input
                   value={draft[k] ?? ""}
                   onChange={(e) => setDraft((d) => ({ ...d, [k]: e.target.value }))}
                   placeholder={DEFAULT_LABELS[k]}
                 />
+                <div className="flex items-center gap-1">
+                  <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => moveTab(k, -1)} disabled={idx === 0} title="Mover aba para a esquerda">
+                    <ArrowUp className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => moveTab(k, 1)} disabled={idx === order.length - 1} title="Mover aba para a direita">
+                    <ArrowDown className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
