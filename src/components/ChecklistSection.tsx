@@ -248,6 +248,24 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
                         <>
                           <button
                             type="button"
+                            title="Mover bloco para cima"
+                            onClick={() => moveBlock(g.block!.id, -1)}
+                            disabled={gi === 0}
+                            className="w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-primary/10 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+                          >
+                            <ArrowUp className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            title="Mover bloco para baixo"
+                            onClick={() => moveBlock(g.block!.id, 1)}
+                            disabled={gi >= blocks.length - 1}
+                            className="w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-primary/10 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+                          >
+                            <ArrowDown className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
                             title="Renomear bloco"
                             onClick={() => { setRenameBlockId(g.block!.id); setRenameDraft(g.block!.name); }}
                             className="w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-primary/10"
