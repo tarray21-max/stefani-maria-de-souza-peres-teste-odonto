@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Answer, Category, ChecklistItem, Quality, ResponseMap } from "@/lib/checklist-data";
-import { Check, X, MinusCircle, Search, MessageSquare, Image as ImageIcon, Plus, Trash2, Pencil, Upload, Eraser, GripVertical, MoreVertical, FolderPlus, FolderInput } from "lucide-react";
+import { Check, X, MinusCircle, Search, MessageSquare, Image as ImageIcon, Plus, Trash2, Pencil, Upload, Eraser, GripVertical, MoreVertical, FolderPlus, FolderInput, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -74,7 +74,7 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
     return items.map((i) => i.id);
   }, [items, positions]);
 
-  const { blocks, addBlock, renameBlock, deleteBlock, moveItemToBlock, blockOfItem } = useBlocks(clientId, category, naturalOrderedIds);
+  const { blocks, addBlock, renameBlock, deleteBlock, moveBlock, moveItemToBlock, blockOfItem } = useBlocks(clientId, category, naturalOrderedIds);
 
   // Se houver qualquer posição manual nesta categoria, respeita-a;
   // caso contrário, aplica a ordenação automática (Não no topo, N/A no fim).
@@ -246,6 +246,24 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
                       <span className="text-[11px] text-muted-foreground">{g.items.length} itens</span>
                       {g.block && !readOnly && (
                         <>
+                          <button
+                            type="button"
+                            title="Mover bloco para cima"
+                            onClick={() => moveBlock(g.block!.id, -1)}
+                            disabled={gi === 0}
+                            className="w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-primary/10 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+                          >
+                            <ArrowUp className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            title="Mover bloco para baixo"
+                            onClick={() => moveBlock(g.block!.id, 1)}
+                            disabled={gi >= blocks.length - 1}
+                            className="w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-primary/10 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+                          >
+                            <ArrowDown className="w-3 h-3" />
+                          </button>
                           <button
                             type="button"
                             title="Renomear bloco"

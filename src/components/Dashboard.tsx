@@ -1,4 +1,4 @@
-import { CATEGORIES, computeMaturity, scoreColorVar, type ChecklistItem, type ResponseMap } from "@/lib/checklist-data";
+import { CATEGORIES, computeMaturity, scoreColorVar, type Category, type ChecklistItem, type ResponseMap } from "@/lib/checklist-data";
 import type { ClientRow } from "@/lib/client-context";
 import { formatCNPJ, formatPhone } from "@/lib/format";
 import { Card } from "@/components/ui/card";
@@ -11,6 +11,10 @@ interface Props {
   answers: ResponseMap;
   items: ChecklistItem[];
   client?: ClientRow | null;
+  /** Rótulos customizados das abas; chave = id da categoria */
+  categoryLabels?: Partial<Record<Category, string>>;
+  /** Ordem das categorias a exibir nos cards */
+  categoryOrder?: Category[];
 }
 
 const CONTRATO_LABEL: Record<ClientRow["tipo_contrato"], string> = {
@@ -18,12 +22,26 @@ const CONTRATO_LABEL: Record<ClientRow["tipo_contrato"], string> = {
   regularizacao_sanitaria: "Regularização Sanitária",
 };
 
-export function Dashboard({ answers, items, client }: Props) {
+const DEFAULT_CATEGORY_SHORT: Record<Category, string> = {
+  documentacao: "Documentação",
+  infraestrutura: "Infraestrutura",
+  procedimentos: "Procedimentos",
+  higienizacao: "Higienização",
+  cme: "CME",
+  tcle_pop: "TCLE × POP",
+};
+
+export function Dashboard({ answers, items, client, categoryLabels, categoryOrder }: Props) {
   const global = computeMaturity(answers, items);
 
-  const perCategory = CATEGORIES.map((c) => ({
-    ...c,
-    result: computeMaturity(answers, items.filter((i) => i.category === c.id)),
+  const orderedCategories: Category[] = categoryOrder && categoryOrder.length > 0
+    ? categoryOrder
+    : [...CATEGORIES.map((c) => c.id as Category), "tcle_pop"];
+
+  const perCategory = orderedCategories.map((id) => ({
+    id,
+    short: categoryLabels?.[id] ?? DEFAULT_CATEGORY_SHORT[id],
+    result: computeMaturity(answers, items.filter((i) => i.category === id)),
   }));
 
   const gargalos = items
@@ -181,7 +199,7 @@ export function Dashboard({ answers, items, client }: Props) {
         ) : (
           <div className="space-y-3">
             {gargalos.map((g, i) => {
-              const cat = CATEGORIES.find((c) => c.id === g.category);
+              const catShort = categoryLabels?.[g.category] ?? DEFAULT_CATEGORY_SHORT[g.category];
               return (
                 <div key={g.id} className="flex items-start gap-4 p-4 rounded-lg bg-danger/5 border border-danger/20">
                   <div className="w-8 h-8 rounded-full bg-danger text-white font-bold flex items-center justify-center flex-shrink-0">
@@ -191,7 +209,7 @@ export function Dashboard({ answers, items, client }: Props) {
                     <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="font-semibold text-foreground">{g.title}</h4>
                       <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-background border border-border text-muted-foreground">
-                        {cat?.short}
+                        {catShort}
                       </span>
                     </div>
                   </div>

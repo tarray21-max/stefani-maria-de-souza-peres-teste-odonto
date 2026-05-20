@@ -131,8 +131,15 @@ function ClientWorkspace({ clientId }: { clientId: string }) {
   const { current } = useClients();
   const { answers, setAnswer, setQuality, setJustification, reset, loaded } = useChecklistStore(clientId);
   const { items, refresh: refreshItems, imageUrlsFor, positions, reorderCategory } = useItems(clientId);
+  const { label, labels, save: saveLabels } = useTabLabels(clientId);
+  const { order, save: saveOrder } = useTabOrder(clientId);
   const global = computeMaturity(answers, items);
   const color = scoreColorVar(global.score);
+
+  // Apenas categorias (exclui "dashboard") para os cards do painel
+  const dashboardCategoryOrder = order.filter((k): k is Category => k !== "dashboard");
+  const dashboardLabels: Partial<Record<Category, string>> = {};
+  for (const k of dashboardCategoryOrder) dashboardLabels[k] = label(k);
 
   return (
     <>
@@ -161,6 +168,13 @@ function ClientWorkspace({ clientId }: { clientId: string }) {
         imageUrlsFor={imageUrlsFor}
         positions={positions}
         reorderCategory={reorderCategory}
+        label={label}
+        labels={labels}
+        saveLabels={saveLabels}
+        order={order}
+        saveOrder={saveOrder}
+        dashboardCategoryOrder={dashboardCategoryOrder}
+        dashboardLabels={dashboardLabels}
       />
 
       <footer className="mt-10 pt-4 border-t border-border/60 text-center text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -237,10 +251,15 @@ function TabsWithRename(props: {
   imageUrlsFor: ReturnType<typeof useItems>["imageUrlsFor"];
   positions: ReturnType<typeof useItems>["positions"];
   reorderCategory: ReturnType<typeof useItems>["reorderCategory"];
+  label: (k: TabKey) => string;
+  labels: Record<string, string>;
+  saveLabels: (next: Record<string, string>) => void;
+  order: TabKey[];
+  saveOrder: (next: TabKey[]) => void;
+  dashboardCategoryOrder: Category[];
+  dashboardLabels: Partial<Record<Category, string>>;
 }) {
-  const { clientId, answers, items, current, setAnswer, setQuality, setJustification, refreshItems, imageUrlsFor, positions, reorderCategory } = props;
-  const { label, labels, save: saveLabels } = useTabLabels(clientId);
-  const { order, save: saveOrder } = useTabOrder(clientId);
+  const { clientId, answers, items, current, setAnswer, setQuality, setJustification, refreshItems, imageUrlsFor, positions, reorderCategory, label, labels, saveLabels, order, saveOrder, dashboardCategoryOrder, dashboardLabels } = props;
   const [renameOpen, setRenameOpen] = useState(false);
   const [draft, setDraft] = useState<Record<string, string>>({});
 
@@ -291,7 +310,7 @@ function TabsWithRename(props: {
       </div>
 
       <TabsContent value="dashboard" className="mt-5 space-y-5">
-        <Dashboard answers={answers} items={items} client={current} />
+        <Dashboard answers={answers} items={items} client={current} categoryLabels={dashboardLabels} categoryOrder={dashboardCategoryOrder} />
         <EvolutionTimeline clientId={clientId} answers={answers} items={items} />
       </TabsContent>
 
