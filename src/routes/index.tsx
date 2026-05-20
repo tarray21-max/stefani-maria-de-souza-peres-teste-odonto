@@ -132,8 +132,11 @@ function ClientWorkspace({ clientId }: { clientId: string }) {
   const { current } = useClients();
   const { answers, setAnswer, setQuality, setJustification, reset, loaded } = useChecklistStore(clientId);
   const { items, refresh: refreshItems, imageUrlsFor, positions, reorderCategory } = useItems(clientId);
-  const { label, labels, save: saveLabels } = useTabLabels(clientId);
-  const { order, save: saveOrder } = useTabOrder(clientId);
+  const { prefs, saveLabels, saveOrder } = useUiPrefs(clientId);
+  const labels = prefs.tab_labels;
+  const savedOrder = prefs.tab_order as TabKey[];
+  const order: TabKey[] = [...savedOrder.filter((k) => TAB_ORDER.includes(k)), ...TAB_ORDER.filter((k) => !savedOrder.includes(k))];
+  const label = (k: TabKey) => labels[k] ?? DEFAULT_LABELS[k];
   const global = computeMaturity(answers, items);
   const color = scoreColorVar(global.score);
 
