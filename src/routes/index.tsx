@@ -131,8 +131,15 @@ function ClientWorkspace({ clientId }: { clientId: string }) {
   const { current } = useClients();
   const { answers, setAnswer, setQuality, setJustification, reset, loaded } = useChecklistStore(clientId);
   const { items, refresh: refreshItems, imageUrlsFor, positions, reorderCategory } = useItems(clientId);
+  const { label, labels, save: saveLabels } = useTabLabels(clientId);
+  const { order, save: saveOrder } = useTabOrder(clientId);
   const global = computeMaturity(answers, items);
   const color = scoreColorVar(global.score);
+
+  // Apenas categorias (exclui "dashboard") para os cards do painel
+  const dashboardCategoryOrder = order.filter((k): k is Category => k !== "dashboard");
+  const dashboardLabels: Partial<Record<Category, string>> = {};
+  for (const k of dashboardCategoryOrder) dashboardLabels[k] = label(k);
 
   return (
     <>
@@ -161,6 +168,13 @@ function ClientWorkspace({ clientId }: { clientId: string }) {
         imageUrlsFor={imageUrlsFor}
         positions={positions}
         reorderCategory={reorderCategory}
+        label={label}
+        labels={labels}
+        saveLabels={saveLabels}
+        order={order}
+        saveOrder={saveOrder}
+        dashboardCategoryOrder={dashboardCategoryOrder}
+        dashboardLabels={dashboardLabels}
       />
 
       <footer className="mt-10 pt-4 border-t border-border/60 text-center text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
