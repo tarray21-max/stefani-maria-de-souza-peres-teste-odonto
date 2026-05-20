@@ -76,25 +76,17 @@ export function ClientProvider({ children }: { children: ReactNode }) {
     })();
   }, [user, refresh]);
 
-  // Realtime: lista de clínicas e membros (próprios ou recém aceitos).
+  // Realtime: lista de clínicas, membros, e vínculos de conta.
   useEffect(() => {
     if (!user) return;
     const ch = supabase
       .channel(`clients-${user.id}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "clients" },
-        () => refresh(),
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "client_members", filter: `user_id=eq.${user.id}` },
-        () => refresh(),
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "clients" }, () => refresh())
+      .on("postgres_changes", { event: "*", schema: "public", table: "client_members", filter: `user_id=eq.${user.id}` }, () => refresh())
+      .on("postgres_changes", { event: "*", schema: "public", table: "account_members", filter: `member_id=eq.${user.id}` }, () => refresh())
+      .on("postgres_changes", { event: "*", schema: "public", table: "account_members", filter: `owner_id=eq.${user.id}` }, () => refresh())
       .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-    };
+    return () => { supabase.removeChannel(ch); };
   }, [user, refresh]);
 
   // Default current
