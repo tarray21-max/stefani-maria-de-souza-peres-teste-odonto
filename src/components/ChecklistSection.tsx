@@ -48,7 +48,6 @@ const OPTIONS: { value: Exclude<Answer, null>; label: string; icon: typeof Check
 ];
 
 export function ChecklistSection({ category, items: allItems, answers, setAnswer, setQuality, setJustification, clientId, onItemsChange, imageUrlsFor, positions, reorderCategory, readOnly }: Props) {
-  const { blocks, addBlock, renameBlock, deleteBlock, moveItemToBlock, blockOfItem } = useBlocks(clientId, category);
   const [renameBlockId, setRenameBlockId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [deleteBlockId, setDeleteBlockId] = useState<string | null>(null);
@@ -56,7 +55,8 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
   const [openId, setOpenId] = useState<string | null>(null);
   const [imageItem, setImageItem] = useState<ChecklistItem | null>(null);
   const [editItem, setEditItem] = useState<ChecklistItem | null>(null);
-  const [showAdd, setShowAdd] = useState(false);
+  /** undefined = não está adicionando; null = sem bloco; string = id do bloco alvo */
+  const [addInBlockId, setAddInBlockId] = useState<string | null | undefined>(undefined);
   const [deleteItem, setDeleteItem] = useState<ChecklistItem | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
@@ -64,6 +64,16 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
   const [filter, setFilter] = useState<FilterKind>("all");
 
   const items = useMemo(() => allItems.filter((i) => i.category === category), [allItems, category]);
+
+  // IDs ordenados conforme a ordem natural (posições manuais quando existem, senão ordem original)
+  const naturalOrderedIds = useMemo(() => {
+    if (positions && items.some((i) => i.id in positions)) {
+      return [...items].sort((a, b) => (positions[a.id] ?? 1e9) - (positions[b.id] ?? 1e9)).map((i) => i.id);
+    }
+    return items.map((i) => i.id);
+  }, [items, positions]);
+
+  const { blocks, addBlock, renameBlock, deleteBlock, moveItemToBlock, blockOfItem } = useBlocks(clientId, category, naturalOrderedIds);
 
   // Se houver qualquer posição manual nesta categoria, respeita-a;
   // caso contrário, aplica a ordenação automática (Não no topo, N/A no fim).
