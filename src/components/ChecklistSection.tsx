@@ -437,6 +437,35 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
       <ItemFormDialog open={showAdd} onClose={() => setShowAdd(false)} category={category} clientId={clientId} onSaved={() => { setShowAdd(false); onItemsChange?.(); }} />
       <ItemFormDialog open={!!editItem} onClose={() => setEditItem(null)} category={category} clientId={clientId} item={editItem} onSaved={() => { setEditItem(null); onItemsChange?.(); }} />
 
+      <Dialog open={!!renameBlockId} onOpenChange={(o) => !o && setRenameBlockId(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Renomear bloco</DialogTitle></DialogHeader>
+          <Input value={renameDraft} onChange={(e) => setRenameDraft(e.target.value)} placeholder="Nome do bloco" autoFocus />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRenameBlockId(null)}>Cancelar</Button>
+            <Button onClick={() => {
+              if (renameBlockId && renameDraft.trim()) renameBlock(renameBlockId, renameDraft.trim());
+              setRenameBlockId(null);
+            }}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteBlockId} onOpenChange={(o) => !o && setDeleteBlockId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir bloco?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O bloco será removido, mas as perguntas continuam no checklist (em "Demais perguntas").
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (deleteBlockId) deleteBlock(deleteBlockId); setDeleteBlockId(null); }}>Excluir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={!!deleteItem} onOpenChange={(o) => !o && setDeleteItem(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
