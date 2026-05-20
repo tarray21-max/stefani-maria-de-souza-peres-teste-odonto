@@ -7,8 +7,9 @@ export interface Block {
   itemIds: string[];
 }
 
-// v2: a semente agora respeita a ordem atual do usuário (não a ordem original).
-const storageKey = (clientId: string, category: Category) => `blocks:v2:${clientId}:${category}`;
+// v3: a semente do Bloco 1 (documentação) usa a ordem original doc1..doc8,
+// independente de reordenações posteriores feitas pelo usuário.
+const storageKey = (clientId: string, category: Category) => `blocks:v3:${clientId}:${category}`;
 
 export function useBlocks(clientId: string | null, category: Category, categoryItemIds: string[]) {
   const key = clientId ? storageKey(clientId, category) : null;
@@ -30,11 +31,14 @@ export function useBlocks(clientId: string | null, category: Category, categoryI
   useEffect(() => {
     if (!key || hydrated) return;
     if (categoryItemIds.length === 0) return;
-    const seed: Block[] = category === "documentacao"
+    // Bloco 1 = doc1..doc8 (ordem original do checklist), preservando apenas os que ainda existem
+    const originalFirst8 = ["doc1", "doc2", "doc3", "doc4", "doc5", "doc6", "doc7", "doc8"]
+      .filter((id) => categoryItemIds.includes(id));
+    const seed: Block[] = category === "documentacao" && originalFirst8.length
       ? [{
           id: `b_${Date.now()}`,
           name: "Bloco 1",
-          itemIds: categoryItemIds.slice(0, 8),
+          itemIds: originalFirst8,
         }]
       : [];
     setBlocks(seed);
