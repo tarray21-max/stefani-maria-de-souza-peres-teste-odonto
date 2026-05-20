@@ -48,6 +48,10 @@ const OPTIONS: { value: Exclude<Answer, null>; label: string; icon: typeof Check
 ];
 
 export function ChecklistSection({ category, items: allItems, answers, setAnswer, setQuality, setJustification, clientId, onItemsChange, imageUrlsFor, positions, reorderCategory, readOnly }: Props) {
+  const { blocks, addBlock, renameBlock, deleteBlock, moveItemToBlock, blockOfItem } = useBlocks(clientId, category);
+  const [renameBlockId, setRenameBlockId] = useState<string | null>(null);
+  const [renameDraft, setRenameDraft] = useState("");
+  const [deleteBlockId, setDeleteBlockId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
   const [imageItem, setImageItem] = useState<ChecklistItem | null>(null);
