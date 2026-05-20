@@ -26,8 +26,11 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const [editing, setEditing] = useState<Partial<ClientRow> | null>(null);
+  const [typesOpen, setTypesOpen] = useState(false);
+  const { items: contractTypes } = useContractTypes();
+  const PRESET_VALUES = new Set(PRESET_CONTRACT_TYPES.map((p) => p.value));
 
-  const startNew = () => setEditing({ area: "odontologia", tipo_contrato: "assessoria_odontologica", nome: "" });
+  const startNew = () => setEditing({ area: "odontologia", tipo_contrato: "assessoria_odontologica", contract_type_label: null, nome: "" });
   const startEdit = (c: ClientRow) => setEditing(c);
 
   useEffect(() => {
@@ -46,6 +49,7 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
   const save = async () => {
     if (!user || !editing) return;
     if (!editing.nome?.trim()) return toast.error("Informe o nome da clínica");
+    const tipo = (PRESET_VALUES.has(editing.tipo_contrato ?? "") ? editing.tipo_contrato : "assessoria_odontologica") as "assessoria_odontologica" | "regularizacao_sanitaria";
     const payload = {
       nome: editing.nome,
       cnpj: editing.cnpj ?? null,
@@ -54,7 +58,8 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
       especialidade: editing.especialidade ?? null,
       endereco: editing.endereco ?? null,
       telefone: editing.telefone ?? null,
-      tipo_contrato: (editing.tipo_contrato ?? "assessoria_odontologica") as "assessoria_odontologica" | "regularizacao_sanitaria",
+      tipo_contrato: tipo,
+      contract_type_label: editing.contract_type_label ?? null,
     };
     if (editing.id) {
       const { error } = await supabase.from("clients").update(payload).eq("id", editing.id);
