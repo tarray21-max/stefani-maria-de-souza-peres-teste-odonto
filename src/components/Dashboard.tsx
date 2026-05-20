@@ -1,4 +1,4 @@
-import { CATEGORIES, computeMaturity, scoreColorVar, type ChecklistItem, type ResponseMap } from "@/lib/checklist-data";
+import { CATEGORIES, computeMaturity, scoreColorVar, type Category, type ChecklistItem, type ResponseMap } from "@/lib/checklist-data";
 import type { ClientRow } from "@/lib/client-context";
 import { formatCNPJ, formatPhone } from "@/lib/format";
 import { Card } from "@/components/ui/card";
@@ -11,11 +11,24 @@ interface Props {
   answers: ResponseMap;
   items: ChecklistItem[];
   client?: ClientRow | null;
+  /** Rótulos customizados das abas; chave = id da categoria */
+  categoryLabels?: Partial<Record<Category, string>>;
+  /** Ordem das categorias a exibir nos cards */
+  categoryOrder?: Category[];
 }
 
 const CONTRATO_LABEL: Record<ClientRow["tipo_contrato"], string> = {
   assessoria_odontologica: "Assessoria Odontológica",
   regularizacao_sanitaria: "Regularização Sanitária",
+};
+
+const DEFAULT_CATEGORY_SHORT: Record<Category, string> = {
+  documentacao: "Documentação",
+  infraestrutura: "Infraestrutura",
+  procedimentos: "Procedimentos",
+  higienizacao: "Higienização",
+  cme: "CME",
+  tcle_pop: "TCLE × POP",
 };
 
 export function Dashboard({ answers, items, client }: Props) {
