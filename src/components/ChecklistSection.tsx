@@ -56,10 +56,11 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
   const [imageItem, setImageItem] = useState<ChecklistItem | null>(null);
   const [editItem, setEditItem] = useState<ChecklistItem | null>(null);
   /** undefined = não está adicionando; null = sem bloco; string = id do bloco alvo */
-  const [addInBlockId, setAddInBlockId] = useState<string | null | undefined>(undefined);
-  const [deleteItem, setDeleteItem] = useState<ChecklistItem | null>(null);
-  const [dragId, setDragId] = useState<string | null>(null);
-  const [overId, setOverId] = useState<string | null>(null);
+    const [addInBlockId, setAddInBlockId] = useState<string | null | undefined>(undefined);
+    const [deleteItem, setDeleteItem] = useState<ChecklistItem | null>(null);
+    const [dragId, setDragId] = useState<string | null>(null);
+    const [overId, setOverId] = useState<string | null>(null);
+    const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   const [filter, setFilter] = useState<FilterKind>("all");
 
@@ -449,7 +450,7 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
         );
       })()}
 
-      <ItemImageDialog item={imageItem} onClose={() => setImageItem(null)} clientId={clientId} images={imageItem ? imageUrlsFor?.(imageItem.id) ?? [] : []} readOnly={readOnly} onEdit={(it) => { setImageItem(null); setEditItem(it); }} />
+      <ItemImageDialog item={imageItem} onClose={() => setImageItem(null)} clientId={clientId} images={imageItem ? imageUrlsFor?.(imageItem.id) ?? [] : []} readOnly={readOnly} onImageClick={setLightboxUrl} onEdit={(it) => { setImageItem(null); setEditItem(it); }} />
       <ItemFormDialog
         open={addInBlockId !== undefined}
         onClose={() => setAddInBlockId(undefined)}
@@ -512,13 +513,18 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {lightboxUrl && (
+        <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4" onClick={() => setLightboxUrl(null)}>
+          <img src={lightboxUrl} alt="Ampliado" className="max-w-full max-h-full object-contain rounded shadow-2xl" />
+        </div>
+      )}
     </div>
   );
 }
 
 
-function ItemImageDialog({ item, onClose, clientId, images, readOnly, onEdit }: {
-  item: ChecklistItem | null; onClose: () => void; clientId: string | null; images: ImageEntry[]; readOnly?: boolean; onEdit?: (it: ChecklistItem) => void;
+function ItemImageDialog({ item, onClose, clientId, images, readOnly, onEdit, onImageClick }: {
+  item: ChecklistItem | null; onClose: () => void; clientId: string | null; images: ImageEntry[]; readOnly?: boolean; onEdit?: (it: ChecklistItem) => void; onImageClick?: (url: string) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -555,16 +561,16 @@ function ItemImageDialog({ item, onClose, clientId, images, readOnly, onEdit }: 
 
   return (
     <Dialog open={!!item} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle className="pr-8">{item?.title}</DialogTitle></DialogHeader>
         {images.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {images.map((img) => (
-              <div key={img.id} className="relative group aspect-video rounded-lg overflow-hidden border border-border bg-muted">
+              <div key={img.id} className="relative group aspect-video rounded-lg overflow-hidden border border-border bg-muted cursor-zoom-in" onClick={() => onImageClick?.(img.url)}>
                 <img src={img.url} alt="Referência" className="w-full h-full object-cover" />
                 {!readOnly && clientId && (
-                  <button type="button" onClick={() => remove(img)} title="Remover" className="absolute top-1 right-1 w-6 h-6 rounded-full bg-background/90 text-destructive opacity-0 group-hover:opacity-100 flex items-center justify-center">
-                    <Trash2 className="w-3 h-3" />
+                  <button type="button" onClick={(e) => { e.stopPropagation(); remove(img); }} title="Remover" className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/90 text-destructive opacity-0 group-hover:opacity-100 flex items-center justify-center shadow-sm">
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
