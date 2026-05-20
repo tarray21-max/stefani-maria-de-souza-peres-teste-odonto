@@ -251,10 +251,15 @@ function TabsWithRename(props: {
   imageUrlsFor: ReturnType<typeof useItems>["imageUrlsFor"];
   positions: ReturnType<typeof useItems>["positions"];
   reorderCategory: ReturnType<typeof useItems>["reorderCategory"];
+  label: (k: TabKey) => string;
+  labels: Record<string, string>;
+  saveLabels: (next: Record<string, string>) => void;
+  order: TabKey[];
+  saveOrder: (next: TabKey[]) => void;
+  dashboardCategoryOrder: Category[];
+  dashboardLabels: Partial<Record<Category, string>>;
 }) {
-  const { clientId, answers, items, current, setAnswer, setQuality, setJustification, refreshItems, imageUrlsFor, positions, reorderCategory } = props;
-  const { label, labels, save: saveLabels } = useTabLabels(clientId);
-  const { order, save: saveOrder } = useTabOrder(clientId);
+  const { clientId, answers, items, current, setAnswer, setQuality, setJustification, refreshItems, imageUrlsFor, positions, reorderCategory, label, labels, saveLabels, order, saveOrder, dashboardCategoryOrder, dashboardLabels } = props;
   const [renameOpen, setRenameOpen] = useState(false);
   const [draft, setDraft] = useState<Record<string, string>>({});
 
