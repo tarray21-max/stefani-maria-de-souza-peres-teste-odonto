@@ -212,13 +212,14 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
 
       {(() => {
         // Particiona `ordered` em blocos + leftover preservando ordem original dentro do bloco
-        const orderedIds = new Set(ordered.map((i) => i.id));
-        const byId = new Map(ordered.map((i) => [i.id, i]));
         const groups: { block: Block | null; items: ChecklistItem[] }[] = [];
         const usedIds = new Set<string>();
 
         for (const b of blocks) {
-          const items = b.itemIds.filter((id) => orderedIds.has(id)).map((id) => byId.get(id)!).filter(Boolean);
+          const blockSet = new Set(b.itemIds);
+          // Respeita a ordem global (`ordered`) também dentro do bloco,
+          // para que o drag-and-drop com reorderCategory tenha efeito visível.
+          const items = ordered.filter((i) => blockSet.has(i.id));
           items.forEach((i) => usedIds.add(i.id));
           groups.push({ block: b, items });
         }
