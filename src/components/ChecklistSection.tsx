@@ -74,7 +74,7 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
     return items.map((i) => i.id);
   }, [items, positions]);
 
-  const { blocks, addBlock, renameBlock, deleteBlock, moveItemToBlock, blockOfItem } = useBlocks(clientId, category, naturalOrderedIds);
+  const { blocks, addBlock, renameBlock, deleteBlock, moveBlock, moveItemToBlock, blockOfItem } = useBlocks(clientId, category, naturalOrderedIds);
 
   // Se houver qualquer posição manual nesta categoria, respeita-a;
   // caso contrário, aplica a ordenação automática (Não no topo, N/A no fim).
