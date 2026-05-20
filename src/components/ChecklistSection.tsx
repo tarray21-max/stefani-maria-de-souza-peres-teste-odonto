@@ -48,7 +48,6 @@ const OPTIONS: { value: Exclude<Answer, null>; label: string; icon: typeof Check
 ];
 
 export function ChecklistSection({ category, items: allItems, answers, setAnswer, setQuality, setJustification, clientId, onItemsChange, imageUrlsFor, positions, reorderCategory, readOnly }: Props) {
-  const { blocks, addBlock, renameBlock, deleteBlock, moveItemToBlock, blockOfItem } = useBlocks(clientId, category);
   const [renameBlockId, setRenameBlockId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [deleteBlockId, setDeleteBlockId] = useState<string | null>(null);
@@ -56,7 +55,8 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
   const [openId, setOpenId] = useState<string | null>(null);
   const [imageItem, setImageItem] = useState<ChecklistItem | null>(null);
   const [editItem, setEditItem] = useState<ChecklistItem | null>(null);
-  const [showAdd, setShowAdd] = useState(false);
+  /** undefined = não está adicionando; null = sem bloco; string = id do bloco alvo */
+  const [addInBlockId, setAddInBlockId] = useState<string | null | undefined>(undefined);
   const [deleteItem, setDeleteItem] = useState<ChecklistItem | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
@@ -64,6 +64,16 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
   const [filter, setFilter] = useState<FilterKind>("all");
 
   const items = useMemo(() => allItems.filter((i) => i.category === category), [allItems, category]);
+
+  // IDs ordenados conforme a ordem natural (posições manuais quando existem, senão ordem original)
+  const naturalOrderedIds = useMemo(() => {
+    if (positions && items.some((i) => i.id in positions)) {
+      return [...items].sort((a, b) => (positions[a.id] ?? 1e9) - (positions[b.id] ?? 1e9)).map((i) => i.id);
+    }
+    return items.map((i) => i.id);
+  }, [items, positions]);
+
+  const { blocks, addBlock, renameBlock, deleteBlock, moveItemToBlock, blockOfItem } = useBlocks(clientId, category, naturalOrderedIds);
 
   // Se houver qualquer posição manual nesta categoria, respeita-a;
   // caso contrário, aplica a ordenação automática (Não no topo, N/A no fim).
@@ -192,14 +202,9 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
             <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar item…" className="h-8 pl-7 text-xs" />
           </div>
           {!readOnly && clientId && (
-            <>
-              <Button size="sm" variant="outline" className="h-8" onClick={() => addBlock(`Bloco ${blocks.length + 1}`)} title="Criar novo bloco">
-                <FolderPlus className="w-3 h-3 mr-1" /> Bloco
-              </Button>
-              <Button size="sm" variant="outline" className="h-8" onClick={() => setShowAdd(true)}>
-                <Plus className="w-3 h-3 mr-1" /> Novo
-              </Button>
-            </>
+            <Button size="sm" variant="outline" className="h-8" onClick={() => addBlock(`Bloco ${blocks.length + 1}`)} title="Criar novo bloco">
+              <FolderPlus className="w-3 h-3 mr-1" /> Novo bloco
+            </Button>
           )}
         </div>
       </div>
@@ -230,7 +235,7 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
               const isLeftover = !g.block;
               return (
                 <div key={g.block?.id ?? `__leftover_${gi}`} className="rounded-lg border border-border/60 bg-card overflow-hidden">
-                  {(g.block || (blocks.length > 0 && isLeftover)) && (
+                  {(g.block || !readOnly) && (
                     <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 border-b border-border/60">
                       <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{isLeftover ? "Sem bloco" : "Bloco"}</span>
                       <span className="font-semibold text-sm text-foreground flex-1 truncate">
@@ -256,6 +261,17 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
                             <Trash2 className="w-3 h-3" />
                           </button>
                         </>
+                      )}
+                      {!readOnly && clientId && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 ml-1"
+                          onClick={() => setAddInBlockId(g.block ? g.block.id : null)}
+                          title={g.block ? `Adicionar pergunta em "${g.block.name}"` : "Adicionar pergunta"}
+                        >
+                          <Plus className="w-3 h-3 mr-1" /> Novo
+                        </Button>
                       )}
                     </div>
                   )}
@@ -434,7 +450,19 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
       })()}
 
       <ItemImageDialog item={imageItem} onClose={() => setImageItem(null)} clientId={clientId} images={imageItem ? imageUrlsFor?.(imageItem.id) ?? [] : []} readOnly={readOnly} onEdit={(it) => { setImageItem(null); setEditItem(it); }} />
-      <ItemFormDialog open={showAdd} onClose={() => setShowAdd(false)} category={category} clientId={clientId} onSaved={() => { setShowAdd(false); onItemsChange?.(); }} />
+      <ItemFormDialog
+        open={addInBlockId !== undefined}
+        onClose={() => setAddInBlockId(undefined)}
+        category={category}
+        clientId={clientId}
+        onSaved={(newId) => {
+          if (newId && addInBlockId) {
+            moveItemToBlock(`c_${newId}`, addInBlockId);
+          }
+          setAddInBlockId(undefined);
+          onItemsChange?.();
+        }}
+      />
       <ItemFormDialog open={!!editItem} onClose={() => setEditItem(null)} category={category} clientId={clientId} item={editItem} onSaved={() => { setEditItem(null); onItemsChange?.(); }} />
 
       <Dialog open={!!renameBlockId} onOpenChange={(o) => !o && setRenameBlockId(null)}>
@@ -585,7 +613,7 @@ function ItemImageDialog({ item, onClose, clientId, images, readOnly, onEdit }: 
 
 
 function ItemFormDialog({ open, onClose, category, clientId, item, onSaved }: {
-  open: boolean; onClose: () => void; category: Category; clientId: string | null; item?: ChecklistItem | null; onSaved: () => void;
+  open: boolean; onClose: () => void; category: Category; clientId: string | null; item?: ChecklistItem | null; onSaved: (newId?: string) => void;
 }) {
   const [title, setTitle] = useState("");
   const [weight, setWeight] = useState(6);
@@ -608,9 +636,15 @@ function ItemFormDialog({ open, onClose, category, clientId, item, onSaved }: {
     if (!clientId) return toast.error("Cadastre uma clínica.");
     if (!title.trim()) return toast.error("Informe o título.");
     setBusy(true);
+    let createdId: string | undefined;
     if (!item) {
-      const { error } = await supabase.from("custom_items").insert({ client_id: clientId, category, title, weight, norma: norma || null, observacao: observacao || null, penalidade: penalidade || null });
+      const { data, error } = await supabase
+        .from("custom_items")
+        .insert({ client_id: clientId, category, title, weight, norma: norma || null, observacao: observacao || null, penalidade: penalidade || null })
+        .select("id")
+        .single();
       if (error) { setBusy(false); return toast.error(error.message); }
+      createdId = (data as { id: string } | null)?.id;
     } else if (item.id.startsWith("c_")) {
       const { error } = await supabase.from("custom_items").update({ title, weight, norma: norma || null, observacao: observacao || null, penalidade: penalidade || null }).eq("id", item.id.slice(2));
       if (error) { setBusy(false); return toast.error(error.message); }
@@ -622,7 +656,7 @@ function ItemFormDialog({ open, onClose, category, clientId, item, onSaved }: {
     }
     setBusy(false);
     toast.success("Salvo");
-    onSaved();
+    onSaved(createdId);
   };
 
   return (

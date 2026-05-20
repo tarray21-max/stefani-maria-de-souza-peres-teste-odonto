@@ -7,54 +7,50 @@ export interface Block {
   itemIds: string[];
 }
 
-const storageKey = (clientId: string, category: Category) => `blocks:${clientId}:${category}`;
+// v2: a semente agora respeita a ordem atual do usuário (não a ordem original).
+const storageKey = (clientId: string, category: Category) => `blocks:v2:${clientId}:${category}`;
 
-// Sementes automáticas para categorias com agrupamento sugerido
-function defaultBlocks(category: Category): Block[] {
-  if (category === "documentacao") {
-    return [
-      {
-        id: `b_${Date.now()}`,
-        name: "Bloco 1",
-        itemIds: ["doc1", "doc2", "doc3", "doc4", "doc5", "doc6", "doc7", "doc8"],
-      },
-    ];
-  }
-  return [];
-}
-
-export function useBlocks(clientId: string | null, category: Category) {
+export function useBlocks(clientId: string | null, category: Category, categoryItemIds: string[]) {
   const key = clientId ? storageKey(clientId, category) : null;
+  const [blocks, setBlocks] = useState<Block[]>([]);
+  const [hydrated, setHydrated] = useState(false);
 
-  const [blocks, setBlocks] = useState<Block[]>(() => {
-    if (typeof window === "undefined" || !key) return [];
-    const raw = localStorage.getItem(key);
-    if (raw) {
-      try { return JSON.parse(raw) as Block[]; } catch { /* ignore */ }
-    }
-    return defaultBlocks(category);
-  });
-
-  // Garante seed quando muda de cliente/categoria
+  // 1) Carrega do localStorage quando muda chave
   useEffect(() => {
-    if (!key) { setBlocks([]); return; }
-    const raw = localStorage.getItem(key);
+    if (!key) { setBlocks([]); setHydrated(false); return; }
+    const raw = typeof window !== "undefined" ? localStorage.getItem(key) : null;
     if (raw) {
-      try { setBlocks(JSON.parse(raw) as Block[]); return; } catch { /* ignore */ }
+      try { setBlocks(JSON.parse(raw) as Block[]); setHydrated(true); return; } catch { /* ignore */ }
     }
-    const seed = defaultBlocks(category);
+    setBlocks([]);
+    setHydrated(false);
+  }, [key]);
+
+  // 2) Semeia uma única vez quando os itens carregam e não há nada salvo
+  useEffect(() => {
+    if (!key || hydrated) return;
+    if (categoryItemIds.length === 0) return;
+    const seed: Block[] = category === "documentacao"
+      ? [{
+          id: `b_${Date.now()}`,
+          name: "Bloco 1",
+          itemIds: categoryItemIds.slice(0, 8),
+        }]
+      : [];
     setBlocks(seed);
     if (seed.length) localStorage.setItem(key, JSON.stringify(seed));
-  }, [key, category]);
+    setHydrated(true);
+  }, [key, hydrated, categoryItemIds, category]);
 
   const persist = useCallback((next: Block[]) => {
     setBlocks(next);
     if (key) localStorage.setItem(key, JSON.stringify(next));
   }, [key]);
 
-  const addBlock = useCallback((name = "Novo bloco") => {
-    const b: Block = { id: `b_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, name, itemIds: [] };
-    persist([...blocks, b]);
+  const addBlock = useCallback((name = "Novo bloco"): string => {
+    const id = `b_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    persist([...blocks, { id, name, itemIds: [] }]);
+    return id;
   }, [blocks, persist]);
 
   const renameBlock = useCallback((id: string, name: string) => {
@@ -65,7 +61,6 @@ export function useBlocks(clientId: string | null, category: Category) {
     persist(blocks.filter((b) => b.id !== id));
   }, [blocks, persist]);
 
-  /** Move um item para `blockId` (ou null = sem bloco). Remove de qualquer outro bloco. */
   const moveItemToBlock = useCallback((itemId: string, blockId: string | null) => {
     const cleaned = blocks.map((b) => ({ ...b, itemIds: b.itemIds.filter((id) => id !== itemId) }));
     if (!blockId) return persist(cleaned);
