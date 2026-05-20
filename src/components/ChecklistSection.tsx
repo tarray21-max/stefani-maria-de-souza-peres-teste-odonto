@@ -208,13 +208,6 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
           return (
             <li
               key={item.id}
-              draggable={canDrag}
-              onDragStart={(e) => {
-                if (!canDrag) return;
-                setDragId(item.id);
-                e.dataTransfer.effectAllowed = "move";
-                e.dataTransfer.setData("text/plain", item.id);
-              }}
               onDragEnter={(e) => {
                 if (!canDrag) return;
                 e.preventDefault();
@@ -237,7 +230,14 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
                 {canDrag && (
                   <span
                     title="Arrastar para reordenar"
-                    className="flex-shrink-0 w-5 h-6 inline-flex items-center justify-center text-muted-foreground hover:text-primary cursor-grab active:cursor-grabbing"
+                    draggable
+                    onDragStart={(e) => {
+                      setDragId(item.id);
+                      e.dataTransfer.effectAllowed = "move";
+                      e.dataTransfer.setData("text/plain", item.id);
+                    }}
+                    onDragEnd={() => { setDragId(null); setOverId(null); }}
+                    className="flex-shrink-0 w-5 h-6 inline-flex items-center justify-center text-muted-foreground hover:text-primary cursor-grab active:cursor-grabbing select-none"
                   >
                     <GripVertical className="w-3.5 h-3.5" />
                   </span>
