@@ -160,7 +160,17 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border/60 p-2">
+      <SidebarFooter className="border-t border-sidebar-border/60 p-2 space-y-1">
+        <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => setAccountShareOpen(true)} title="Compartilhar conta inteira">
+          <Users className="w-4 h-4" />
+          {!collapsed && <span className="ml-2">Compartilhar conta</span>}
+        </Button>
+        {current && (
+          <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => setPropagateOpen(true)} title="Aplicar estrutura desta clínica em outros painéis">
+            <Copy className="w-4 h-4" />
+            {!collapsed && <span className="ml-2">Aplicar estrutura</span>}
+          </Button>
+        )}
         <Button variant="ghost" size="sm" className="w-full justify-start" onClick={onSignOut}>
           <LogOut className="w-4 h-4" />
           {!collapsed && <span className="ml-2">Sair</span>}
