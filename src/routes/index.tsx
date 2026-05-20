@@ -306,12 +306,6 @@ function TabsWithRename(props: {
   );
 }
 
-      <footer className="mt-10 pt-4 border-t border-border/60 text-center text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-        Brasil e Silveira Advogados · Maturidade Regulatória
-      </footer>
-    </>
-  );
-}
 
 function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
   return (
