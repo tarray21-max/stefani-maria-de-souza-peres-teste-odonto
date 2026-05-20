@@ -1,4 +1,5 @@
-export type Category = "documentacao" | "infraestrutura" | "procedimentos" | "higienizacao" | "cme";
+export type BaseCategory = "documentacao" | "infraestrutura" | "procedimentos" | "higienizacao" | "cme";
+export type Category = BaseCategory | "tcle_pop";
 
 export interface ChecklistItem {
   id: string;
@@ -18,7 +19,7 @@ export interface ChecklistItem {
   referencia?: string;
 }
 
-export const CATEGORIES: { id: Category; label: string; short: string }[] = [
+export const CATEGORIES: { id: BaseCategory; label: string; short: string }[] = [
   { id: "documentacao", label: "Grupo 1 — Documentação, Gestão e Responsabilidade Técnica", short: "Documentação" },
   { id: "infraestrutura", label: "Grupo 2 — Infraestrutura e Instalações", short: "Infraestrutura" },
   { id: "procedimentos", label: "Grupo 3 — Procedimentos, Equipamentos e Produtos", short: "Procedimentos" },
