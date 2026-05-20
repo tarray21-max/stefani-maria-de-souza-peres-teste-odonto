@@ -29,6 +29,8 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
   const collapsed = state === "collapsed";
   const [editing, setEditing] = useState<Partial<ClientRow> | null>(null);
   const [typesOpen, setTypesOpen] = useState(false);
+  const [accountShareOpen, setAccountShareOpen] = useState(false);
+  const [propagateOpen, setPropagateOpen] = useState(false);
   const { items: contractTypes } = useContractTypes();
   const PRESET_VALUES = new Set(PRESET_CONTRACT_TYPES.map((p) => p.value));
 
