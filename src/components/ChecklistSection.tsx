@@ -192,158 +192,246 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
             <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar item…" className="h-8 pl-7 text-xs" />
           </div>
           {!readOnly && clientId && (
-            <Button size="sm" variant="outline" className="h-8" onClick={() => setShowAdd(true)}>
-              <Plus className="w-3 h-3 mr-1" /> Novo
-            </Button>
+            <>
+              <Button size="sm" variant="outline" className="h-8" onClick={() => addBlock(`Bloco ${blocks.length + 1}`)} title="Criar novo bloco">
+                <FolderPlus className="w-3 h-3 mr-1" /> Bloco
+              </Button>
+              <Button size="sm" variant="outline" className="h-8" onClick={() => setShowAdd(true)}>
+                <Plus className="w-3 h-3 mr-1" /> Novo
+              </Button>
+            </>
           )}
         </div>
       </div>
 
+      {(() => {
+        // Particiona `ordered` em blocos + leftover preservando ordem original dentro do bloco
+        const orderedIds = new Set(ordered.map((i) => i.id));
+        const byId = new Map(ordered.map((i) => [i.id, i]));
+        const groups: { block: Block | null; items: ChecklistItem[] }[] = [];
+        const usedIds = new Set<string>();
 
-      <ul className="divide-y divide-border/60 rounded-lg border border-border/60 bg-card overflow-hidden">
-        {ordered.map((item, idx) => {
-          const resp = answers[item.id];
-          const current = resp?.answer ?? null;
-          const quality = resp?.quality ?? null;
-          const isNa = current === "na";
-          const isNao = current === "nao";
-          const isSim = current === "sim";
-          const isOpen = openId === item.id;
-          const isCustom = item.id.startsWith("c_");
-          const imgs = imageUrlsFor?.(item.id) ?? [];
-          const isDragging = dragId === item.id;
-          const isOver = overId === item.id && dragId && dragId !== item.id;
-          const canDrag = !readOnly && !!reorderCategory && !!clientId;
-          return (
-            <li
-              key={item.id}
-              onDragEnter={(e) => {
-                if (!canDrag) return;
-                e.preventDefault();
-                if (dragId && dragId !== item.id) setOverId(item.id);
-              }}
-              onDragOver={(e) => { if (canDrag && dragId) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; } }}
-              onDragLeave={() => { if (overId === item.id) setOverId(null); }}
-              onDrop={(e) => { if (canDrag) { e.preventDefault(); handleDrop(item.id); } }}
-              onDragEnd={() => { setDragId(null); setOverId(null); }}
-              className={cn(
-                "transition-all duration-200 ease-out",
-                isNa && "opacity-40 hover:opacity-100",
-                isNao && "bg-danger/5",
-                isDragging && "opacity-50",
-                isOver && "bg-primary/10 outline outline-1 outline-primary/40",
-              )}
-            >
-              <div className="flex items-center gap-1.5 px-2 py-1.5">
-                {/* AÇÕES À ESQUERDA: drag • número • norma • editar • excluir • limpar */}
-                {canDrag && (
-                  <span
-                    title="Arrastar para reordenar"
-                    draggable
-                    onDragStart={(e) => {
-                      setDragId(item.id);
-                      e.dataTransfer.effectAllowed = "move";
-                      e.dataTransfer.setData("text/plain", item.id);
-                    }}
-                    onDragEnd={() => { setDragId(null); setOverId(null); }}
-                    className="flex-shrink-0 w-5 h-6 inline-flex items-center justify-center text-muted-foreground hover:text-primary cursor-grab active:cursor-grabbing select-none"
-                  >
-                    <GripVertical className="w-3.5 h-3.5" />
-                  </span>
-                )}
-                <span
-                  className={cn(
-                    "flex-shrink-0 w-6 h-5 rounded font-semibold flex items-center justify-center text-[10px]",
-                    isNao ? "bg-danger text-white" : "bg-primary/10 text-primary",
+        for (const b of blocks) {
+          const items = b.itemIds.filter((id) => orderedIds.has(id)).map((id) => byId.get(id)!).filter(Boolean);
+          items.forEach((i) => usedIds.add(i.id));
+          groups.push({ block: b, items });
+        }
+        const leftover = ordered.filter((i) => !usedIds.has(i.id));
+        if (blocks.length === 0) {
+          groups.push({ block: null, items: leftover });
+        } else if (leftover.length) {
+          groups.push({ block: null, items: leftover });
+        }
+
+        let runningIdx = 0;
+        return (
+          <div className="space-y-4">
+            {groups.map((g, gi) => {
+              const isLeftover = !g.block;
+              return (
+                <div key={g.block?.id ?? `__leftover_${gi}`} className="rounded-lg border border-border/60 bg-card overflow-hidden">
+                  {(g.block || (blocks.length > 0 && isLeftover)) && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 border-b border-border/60">
+                      <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{isLeftover ? "Sem bloco" : "Bloco"}</span>
+                      <span className="font-semibold text-sm text-foreground flex-1 truncate">
+                        {isLeftover ? "Demais perguntas" : g.block!.name}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">{g.items.length} itens</span>
+                      {g.block && !readOnly && (
+                        <>
+                          <button
+                            type="button"
+                            title="Renomear bloco"
+                            onClick={() => { setRenameBlockId(g.block!.id); setRenameDraft(g.block!.name); }}
+                            className="w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-primary/10"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            title="Excluir bloco (mantém as perguntas)"
+                            onClick={() => setDeleteBlockId(g.block!.id)}
+                            className="w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-danger hover:bg-danger/10"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   )}
-                  title="Posição neste grupo"
-                >
-                  {idx + 1}
-                </span>
+                  <ul className="divide-y divide-border/60">
+                    {g.items.length === 0 ? (
+                      <li className="px-3 py-4 text-center text-xs text-muted-foreground italic">Nenhuma pergunta neste bloco. Use o menu de cada item para movê-la para cá.</li>
+                    ) : g.items.map((item) => {
+                      const idx = runningIdx++;
+                      const resp = answers[item.id];
+                      const current = resp?.answer ?? null;
+                      const quality = resp?.quality ?? null;
+                      const isNa = current === "na";
+                      const isNao = current === "nao";
+                      const isSim = current === "sim";
+                      const isOpen = openId === item.id;
+                      const imgs = imageUrlsFor?.(item.id) ?? [];
+                      const isDragging = dragId === item.id;
+                      const isOver = overId === item.id && dragId && dragId !== item.id;
+                      const canDrag = !readOnly && !!reorderCategory && !!clientId;
+                      const currentBlock = blockOfItem(item.id);
+                      return (
+                        <li
+                          key={item.id}
+                          onDragEnter={(e) => {
+                            if (!canDrag) return;
+                            e.preventDefault();
+                            if (dragId && dragId !== item.id) setOverId(item.id);
+                          }}
+                          onDragOver={(e) => { if (canDrag && dragId) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; } }}
+                          onDragLeave={() => { if (overId === item.id) setOverId(null); }}
+                          onDrop={(e) => { if (canDrag) { e.preventDefault(); handleDrop(item.id); } }}
+                          onDragEnd={() => { setDragId(null); setOverId(null); }}
+                          className={cn(
+                            "transition-all duration-200 ease-out",
+                            isNa && "opacity-40 hover:opacity-100",
+                            isNao && "bg-danger/5",
+                            isDragging && "opacity-50",
+                            isOver && "bg-primary/10 outline outline-1 outline-primary/40",
+                          )}
+                        >
+                          <div className="flex items-center gap-1.5 px-2 py-1.5">
+                            {canDrag && (
+                              <span
+                                title="Arrastar para reordenar"
+                                draggable
+                                onDragStart={(e) => {
+                                  setDragId(item.id);
+                                  e.dataTransfer.effectAllowed = "move";
+                                  e.dataTransfer.setData("text/plain", item.id);
+                                }}
+                                onDragEnd={() => { setDragId(null); setOverId(null); }}
+                                className="flex-shrink-0 w-5 h-6 inline-flex items-center justify-center text-muted-foreground hover:text-primary cursor-grab active:cursor-grabbing select-none"
+                              >
+                                <GripVertical className="w-3.5 h-3.5" />
+                              </span>
+                            )}
+                            <span
+                              className={cn(
+                                "flex-shrink-0 w-6 h-5 rounded font-semibold flex items-center justify-center text-[10px]",
+                                isNao ? "bg-danger text-white" : "bg-primary/10 text-primary",
+                              )}
+                              title="Posição neste grupo"
+                            >
+                              {idx + 1}
+                            </span>
 
-                {!readOnly && clientId ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        title="Ações"
-                        className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-primary/10"
-                      >
-                        <MoreVertical className="w-3.5 h-3.5" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-44">
-                      <DropdownMenuItem onClick={() => setEditItem(item)}>
-                        <Pencil className="w-3.5 h-3.5 mr-2" /> Editar pergunta
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleClear(item.id)} disabled={!current}>
-                        <Eraser className="w-3.5 h-3.5 mr-2" /> Limpar resposta
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => setDeleteItem(item)} className="text-danger focus:text-danger">
-                        <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir pergunta
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : null}
+                            {!readOnly && clientId ? (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button
+                                    type="button"
+                                    title="Ações"
+                                    className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-primary/10"
+                                  >
+                                    <MoreVertical className="w-3.5 h-3.5" />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="w-52">
+                                  <DropdownMenuItem onClick={() => setEditItem(item)}>
+                                    <Pencil className="w-3.5 h-3.5 mr-2" /> Editar pergunta
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleClear(item.id)} disabled={!current}>
+                                    <Eraser className="w-3.5 h-3.5 mr-2" /> Limpar resposta
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger>
+                                      <FolderInput className="w-3.5 h-3.5 mr-2" /> Mover para bloco
+                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuSubContent>
+                                      <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Blocos</DropdownMenuLabel>
+                                      {blocks.length === 0 && (
+                                        <DropdownMenuItem disabled>Nenhum bloco criado</DropdownMenuItem>
+                                      )}
+                                      {blocks.map((b) => (
+                                        <DropdownMenuItem
+                                          key={b.id}
+                                          onClick={() => moveItemToBlock(item.id, b.id)}
+                                          disabled={currentBlock?.id === b.id}
+                                        >
+                                          {b.name}{currentBlock?.id === b.id ? " ✓" : ""}
+                                        </DropdownMenuItem>
+                                      ))}
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem onClick={() => moveItemToBlock(item.id, null)} disabled={!currentBlock}>
+                                        Remover do bloco
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => addBlock(`Bloco ${blocks.length + 1}`)}>
+                                        <FolderPlus className="w-3.5 h-3.5 mr-2" /> Novo bloco…
+                                      </DropdownMenuItem>
+                                    </DropdownMenuSubContent>
+                                  </DropdownMenuSub>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => setDeleteItem(item)} className="text-danger focus:text-danger">
+                                    <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir pergunta
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            ) : null}
 
+                            <button type="button" onClick={() => setImageItem(item)} className="flex-1 min-w-0 text-sm text-foreground leading-tight truncate text-left hover:text-primary pl-1" title={item.title}>
+                              {item.title}
+                            </button>
 
-                {/* TÍTULO */}
-                <button type="button" onClick={() => setImageItem(item)} className="flex-1 min-w-0 text-sm text-foreground leading-tight truncate text-left hover:text-primary pl-1" title={item.title}>
-                  {item.title}
-                </button>
+                            {isSim && setQuality && (
+                              <button
+                                type="button"
+                                title={quality === "ruim" ? "Marcado como Ruim — pontua 50%. Clique para voltar a Bom." : "Marcar implementação como Ruim (pontua 50%)"}
+                                onClick={() => setQuality(item.id, quality === "ruim" ? "bom" : "ruim")}
+                                className={cn(
+                                  "flex-shrink-0 inline-flex items-center px-1.5 h-6 rounded text-[10px] font-semibold transition-colors",
+                                  quality === "ruim" ? "bg-amber-500 text-white" : "text-muted-foreground hover:bg-muted",
+                                )}
+                              >
+                                {quality === "ruim" ? "Ruim 50%" : "Bom"}
+                              </button>
+                            )}
 
-                {/* QUALIDADE compacta (apenas quando "Sim"): toggle único Bom ⇄ Ruim 50% */}
-                {isSim && setQuality && (
-                  <button
-                    type="button"
-                    title={quality === "ruim" ? "Marcado como Ruim — pontua 50%. Clique para voltar a Bom." : "Marcar implementação como Ruim (pontua 50%)"}
-                    onClick={() => setQuality(item.id, quality === "ruim" ? "bom" : "ruim")}
-                    className={cn(
-                      "flex-shrink-0 inline-flex items-center px-1.5 h-6 rounded text-[10px] font-semibold transition-colors",
-                      quality === "ruim"
-                        ? "bg-amber-500 text-white"
-                        : "text-muted-foreground hover:bg-muted",
-                    )}
-                  >
-                    {quality === "ruim" ? "Ruim 50%" : "Bom"}
-                  </button>
-                )}
+                            {setJustification && (
+                              <button type="button" title="Justificativa" onClick={() => setOpenId(isOpen ? null : item.id)}
+                                className={cn("flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary", isOpen && "bg-primary text-white", resp?.justification && !isOpen && "text-primary")}>
+                                <MessageSquare className="w-3 h-3" />
+                              </button>
+                            )}
 
-                {setJustification && (
-                  <button type="button" title="Justificativa" onClick={() => setOpenId(isOpen ? null : item.id)}
-                    className={cn("flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary", isOpen && "bg-primary text-white", resp?.justification && !isOpen && "text-primary")}>
-                    <MessageSquare className="w-3 h-3" />
-                  </button>
-                )}
+                            <div className="flex gap-1 flex-shrink-0 ml-1">
+                              {OPTIONS.map((opt) => {
+                                const Icon = opt.icon;
+                                const active = current === opt.value;
+                                return (
+                                  <button key={opt.value} type="button" onClick={() => !readOnly && handleClickOption(item.id, opt.value)}
+                                    title={active ? `${opt.label} (clique para desmarcar)` : opt.label}
+                                    className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] font-medium transition-all border-border bg-background hover:border-primary/40", active && opt.activeClass)}>
+                                    <Icon className="w-3 h-3" />
+                                    {opt.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
 
-                {/* RESPOSTAS À DIREITA */}
-                <div className="flex gap-1 flex-shrink-0 ml-1">
-                  {OPTIONS.map((opt) => {
-                    const Icon = opt.icon;
-                    const active = current === opt.value;
-                    return (
-                      <button key={opt.value} type="button" onClick={() => !readOnly && handleClickOption(item.id, opt.value)}
-                        title={active ? `${opt.label} (clique para desmarcar)` : opt.label}
-                        className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] font-medium transition-all border-border bg-background hover:border-primary/40", active && opt.activeClass)}>
-                        <Icon className="w-3 h-3" />
-                        {opt.label}
-                      </button>
-                    );
-                  })}
+                          {isOpen && setJustification && (
+                            <div className="px-3 pb-3 pt-1">
+                              <Textarea value={resp?.justification ?? ""} onChange={(e) => setJustification(item.id, e.target.value)} placeholder="Descreva como o item está implementado, evidências, pendências…" className="text-xs min-h-[60px]" />
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </div>
-              </div>
-
-              {isOpen && setJustification && (
-                <div className="px-3 pb-3 pt-1">
-                  <Textarea value={resp?.justification ?? ""} onChange={(e) => setJustification(item.id, e.target.value)} placeholder="Descreva como o item está implementado, evidências, pendências…" className="text-xs min-h-[60px]" />
-                </div>
-              )}
-            </li>
-          );
-        })}
-        {ordered.length === 0 && <li className="px-3 py-6 text-center text-sm text-muted-foreground">Nenhum item encontrado.</li>}
-      </ul>
+              );
+            })}
+            {ordered.length === 0 && <div className="rounded-lg border border-border/60 bg-card px-3 py-6 text-center text-sm text-muted-foreground">Nenhum item encontrado.</div>}
+          </div>
+        );
+      })()}
 
       <ItemImageDialog item={imageItem} onClose={() => setImageItem(null)} clientId={clientId} images={imageItem ? imageUrlsFor?.(imageItem.id) ?? [] : []} readOnly={readOnly} onEdit={(it) => { setImageItem(null); setEditItem(it); }} />
       <ItemFormDialog open={showAdd} onClose={() => setShowAdd(false)} category={category} clientId={clientId} onSaved={() => { setShowAdd(false); onItemsChange?.(); }} />
