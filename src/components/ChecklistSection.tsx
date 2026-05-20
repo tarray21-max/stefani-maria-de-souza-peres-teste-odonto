@@ -202,14 +202,9 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
             <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar item…" className="h-8 pl-7 text-xs" />
           </div>
           {!readOnly && clientId && (
-            <>
-              <Button size="sm" variant="outline" className="h-8" onClick={() => addBlock(`Bloco ${blocks.length + 1}`)} title="Criar novo bloco">
-                <FolderPlus className="w-3 h-3 mr-1" /> Bloco
-              </Button>
-              <Button size="sm" variant="outline" className="h-8" onClick={() => setShowAdd(true)}>
-                <Plus className="w-3 h-3 mr-1" /> Novo
-              </Button>
-            </>
+            <Button size="sm" variant="outline" className="h-8" onClick={() => addBlock(`Bloco ${blocks.length + 1}`)} title="Criar novo bloco">
+              <FolderPlus className="w-3 h-3 mr-1" /> Novo bloco
+            </Button>
           )}
         </div>
       </div>
