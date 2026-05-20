@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      checklist_blocks: {
+        Row: {
+          category: string
+          client_id: string
+          created_at: string
+          id: string
+          item_ids: string[]
+          name: string
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          client_id: string
+          created_at?: string
+          id?: string
+          item_ids?: string[]
+          name: string
+          position?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          item_ids?: string[]
+          name?: string
+          position?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       client_members: {
         Row: {
           client_id: string
@@ -393,6 +426,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      service_matrix_items: {
+        Row: {
+          area: string
+          client_id: string
+          created_at: string
+          created_by: string | null
+          default_key: string | null
+          disabled: boolean
+          id: string
+          is_default: boolean
+          name: string
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          area?: string
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          default_key?: string | null
+          disabled?: boolean
+          id?: string
+          is_default?: boolean
+          name: string
+          position?: number
+          updated_at?: string
+        }
+        Update: {
+          area?: string
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          default_key?: string | null
+          disabled?: boolean
+          id?: string
+          is_default?: boolean
+          name?: string
+          position?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       visitor_links: {
         Row: {
