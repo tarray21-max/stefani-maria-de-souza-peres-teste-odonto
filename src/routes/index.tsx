@@ -310,7 +310,7 @@ function TabsWithRename(props: {
       </div>
 
       <TabsContent value="dashboard" className="mt-5 space-y-5">
-        <Dashboard answers={answers} items={items} client={current} />
+        <Dashboard answers={answers} items={items} client={current} categoryLabels={dashboardLabels} categoryOrder={dashboardCategoryOrder} />
         <EvolutionTimeline clientId={clientId} answers={answers} items={items} />
       </TabsContent>
 
