@@ -104,6 +104,16 @@ export function useBlocks(clientId: string | null, category: Category, categoryI
     persist(blocks.filter((b) => b.id !== id));
   }, [blocks, persist]);
 
+  const moveBlock = useCallback((id: string, direction: -1 | 1) => {
+    const idx = blocks.findIndex((b) => b.id === id);
+    const to = idx + direction;
+    if (idx < 0 || to < 0 || to >= blocks.length) return;
+    const next = [...blocks];
+    const [moved] = next.splice(idx, 1);
+    next.splice(to, 0, moved);
+    persist(next);
+  }, [blocks, persist]);
+
   const moveItemToBlock = useCallback((itemId: string, blockId: string | null) => {
     const cleaned = blocks.map((b) => ({ ...b, itemIds: b.itemIds.filter((id) => id !== itemId) }));
     if (!blockId) return persist(cleaned);
