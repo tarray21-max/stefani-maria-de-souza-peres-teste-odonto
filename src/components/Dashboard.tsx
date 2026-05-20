@@ -31,12 +31,17 @@ const DEFAULT_CATEGORY_SHORT: Record<Category, string> = {
   tcle_pop: "TCLE × POP",
 };
 
-export function Dashboard({ answers, items, client }: Props) {
+export function Dashboard({ answers, items, client, categoryLabels, categoryOrder }: Props) {
   const global = computeMaturity(answers, items);
 
-  const perCategory = CATEGORIES.map((c) => ({
-    ...c,
-    result: computeMaturity(answers, items.filter((i) => i.category === c.id)),
+  const orderedCategories: Category[] = categoryOrder && categoryOrder.length > 0
+    ? categoryOrder
+    : [...CATEGORIES.map((c) => c.id as Category), "tcle_pop"];
+
+  const perCategory = orderedCategories.map((id) => ({
+    id,
+    short: categoryLabels?.[id] ?? DEFAULT_CATEGORY_SHORT[id],
+    result: computeMaturity(answers, items.filter((i) => i.category === id)),
   }));
 
   const gargalos = items
