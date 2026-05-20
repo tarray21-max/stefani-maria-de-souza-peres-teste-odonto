@@ -262,6 +262,17 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
                           </button>
                         </>
                       )}
+                      {!readOnly && clientId && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 ml-1"
+                          onClick={() => setAddInBlockId(g.block ? g.block.id : null)}
+                          title={g.block ? `Adicionar pergunta em "${g.block.name}"` : "Adicionar pergunta"}
+                        >
+                          <Plus className="w-3 h-3 mr-1" /> Novo
+                        </Button>
+                      )}
                     </div>
                   )}
                   <ul className="divide-y divide-border/60">
