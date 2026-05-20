@@ -1,8 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { LayoutDashboard, FileText, Building, Wrench, SprayCan, Boxes, Building2, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, FileText, Building, Wrench, SprayCan, Boxes, Building2, Sun, Moon, FileSignature, Pencil } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { useChecklistStore } from "@/lib/use-checklist-store";
 import { useItems } from "@/lib/use-items";
 import { Dashboard } from "@/components/Dashboard";
@@ -145,38 +149,19 @@ function ClientWorkspace({ clientId }: { clientId: string }) {
         </div>
       </div>
 
-      <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="w-full h-auto p-1 bg-muted/60 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1">
-          <TabsTrigger value="dashboard" className="flex items-center gap-2 py-2 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-            <LayoutDashboard className="w-4 h-4" />
-            <span className="text-sm">Painel</span>
-          </TabsTrigger>
-          {CATEGORIES.map((c) => {
-            const Icon = TAB_ICONS[c.id];
-            return (
-              <TabsTrigger key={c.id} value={c.id} className="flex items-center gap-2 py-2 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                <Icon className="w-4 h-4" />
-                <span className="text-sm">{c.short}</span>
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
-
-        <TabsContent value="dashboard" className="mt-5 space-y-5">
-          <Dashboard answers={answers} items={items} client={current} />
-          <EvolutionTimeline clientId={clientId} answers={answers} items={items} />
-        </TabsContent>
-
-        {CATEGORIES.map((c) => (
-          <TabsContent key={c.id} value={c.id} className="mt-5">
-            <SectionHeader title={c.label} subtitle={`${items.filter((i) => i.category === c.id).length} requisitos neste grupo.`} />
-            <ChecklistSection category={c.id} items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} positions={positions} reorderCategory={reorderCategory} />
-            {c.id === "documentacao" && (
-              <ServiceMatrix answers={answers} setAnswer={setAnswer} />
-            )}
-          </TabsContent>
-        ))}
-      </Tabs>
+      <TabsWithRename
+        clientId={clientId}
+        answers={answers}
+        items={items}
+        current={current}
+        setAnswer={setAnswer}
+        setQuality={setQuality}
+        setJustification={setJustification}
+        refreshItems={refreshItems}
+        imageUrlsFor={imageUrlsFor}
+        positions={positions}
+        reorderCategory={reorderCategory}
+      />
 
       <footer className="mt-10 pt-4 border-t border-border/60 text-center text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
         Brasil e Silveira Advogados · Maturidade Regulatória
@@ -184,6 +169,143 @@ function ClientWorkspace({ clientId }: { clientId: string }) {
     </>
   );
 }
+
+type TabKey = "dashboard" | Category | "tcle_pop";
+
+const DEFAULT_LABELS: Record<TabKey, string> = {
+  dashboard: "Painel",
+  documentacao: "Documentação",
+  infraestrutura: "Infraestrutura",
+  procedimentos: "Procedimentos",
+  higienizacao: "Higienização",
+  cme: "CME",
+  tcle_pop: "TCLE × POP",
+};
+
+const TAB_ORDER: TabKey[] = ["dashboard", "documentacao", "infraestrutura", "procedimentos", "higienizacao", "cme", "tcle_pop"];
+
+const TAB_ICONS_ALL: Record<TabKey, typeof FileText> = {
+  dashboard: LayoutDashboard,
+  documentacao: FileText,
+  infraestrutura: Building,
+  procedimentos: Wrench,
+  higienizacao: SprayCan,
+  cme: Boxes,
+  tcle_pop: FileSignature,
+};
+
+function useTabLabels(clientId: string) {
+  const storageKey = `tabLabels:${clientId}`;
+  const [labels, setLabels] = useState<Record<string, string>>(() => {
+    if (typeof window === "undefined") return {};
+    try { return JSON.parse(localStorage.getItem(storageKey) ?? "{}"); } catch { return {}; }
+  });
+  const label = (k: TabKey) => labels[k] ?? DEFAULT_LABELS[k];
+  const save = (next: Record<string, string>) => {
+    setLabels(next);
+    localStorage.setItem(storageKey, JSON.stringify(next));
+  };
+  return { label, labels, save };
+}
+
+function TabsWithRename(props: {
+  clientId: string;
+  answers: ReturnType<typeof useChecklistStore>["answers"];
+  items: ReturnType<typeof useItems>["items"];
+  current: ReturnType<typeof useClients>["current"];
+  setAnswer: ReturnType<typeof useChecklistStore>["setAnswer"];
+  setQuality: ReturnType<typeof useChecklistStore>["setQuality"];
+  setJustification: ReturnType<typeof useChecklistStore>["setJustification"];
+  refreshItems: ReturnType<typeof useItems>["refresh"];
+  imageUrlsFor: ReturnType<typeof useItems>["imageUrlsFor"];
+  positions: ReturnType<typeof useItems>["positions"];
+  reorderCategory: ReturnType<typeof useItems>["reorderCategory"];
+}) {
+  const { clientId, answers, items, current, setAnswer, setQuality, setJustification, refreshItems, imageUrlsFor, positions, reorderCategory } = props;
+  const { label, labels, save } = useTabLabels(clientId);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [draft, setDraft] = useState<Record<string, string>>({});
+
+  const openRename = () => {
+    const init: Record<string, string> = {};
+    TAB_ORDER.forEach((k) => { init[k] = labels[k] ?? DEFAULT_LABELS[k]; });
+    setDraft(init);
+    setRenameOpen(true);
+  };
+
+  const applyRename = () => {
+    const cleaned: Record<string, string> = {};
+    Object.entries(draft).forEach(([k, v]) => {
+      const t = v.trim();
+      if (t && t !== DEFAULT_LABELS[k as TabKey]) cleaned[k] = t;
+    });
+    save(cleaned);
+    setRenameOpen(false);
+  };
+
+  return (
+    <Tabs defaultValue="dashboard" className="w-full">
+      <div className="flex items-start gap-2">
+        <TabsList className="flex-1 h-auto p-1 bg-muted/60 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-1">
+          {TAB_ORDER.map((k) => {
+            const Icon = TAB_ICONS_ALL[k];
+            return (
+              <TabsTrigger key={k} value={k} className="flex items-center gap-2 py-2 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <Icon className="w-4 h-4" />
+                <span className="text-sm truncate">{label(k)}</span>
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+        <Button variant="outline" size="sm" className="h-9 mt-1" onClick={openRename} title="Renomear abas">
+          <Pencil className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+
+      <TabsContent value="dashboard" className="mt-5 space-y-5">
+        <Dashboard answers={answers} items={items} client={current} />
+        <EvolutionTimeline clientId={clientId} answers={answers} items={items} />
+      </TabsContent>
+
+      {CATEGORIES.map((c) => (
+        <TabsContent key={c.id} value={c.id} className="mt-5">
+          <SectionHeader title={label(c.id)} subtitle={`${items.filter((i) => i.category === c.id).length} requisitos neste grupo.`} />
+          <ChecklistSection category={c.id} items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} positions={positions} reorderCategory={reorderCategory} />
+        </TabsContent>
+      ))}
+
+      <TabsContent value="tcle_pop" className="mt-5">
+        <SectionHeader title={label("tcle_pop")} subtitle="Indique se cada serviço prestado possui TCLE e POP correspondentes." />
+        <ServiceMatrix answers={answers} setAnswer={setAnswer} />
+      </TabsContent>
+
+      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Renomear abas</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {TAB_ORDER.map((k) => (
+              <div key={k} className="grid grid-cols-[120px_1fr] items-center gap-3">
+                <Label className="text-xs text-muted-foreground">{DEFAULT_LABELS[k]}</Label>
+                <Input
+                  value={draft[k] ?? ""}
+                  onChange={(e) => setDraft((d) => ({ ...d, [k]: e.target.value }))}
+                  placeholder={DEFAULT_LABELS[k]}
+                />
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameOpen(false)}>Cancelar</Button>
+            <Button onClick={applyRename}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Tabs>
+  );
+}
+
 
 function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
   return (

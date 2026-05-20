@@ -286,8 +286,6 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
                 {/* TÍTULO */}
                 <button type="button" onClick={() => setImageItem(item)} className="flex-1 min-w-0 text-sm text-foreground leading-tight truncate text-left hover:text-primary pl-1" title={item.title}>
                   {item.title}
-                  
-                  {isCustom && <span className="ml-2 text-[9px] uppercase text-primary">custom</span>}
                 </button>
 
                 {/* QUALIDADE compacta (apenas quando "Sim"): toggle único Bom ⇄ Ruim 50% */}
