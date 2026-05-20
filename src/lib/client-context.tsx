@@ -67,9 +67,11 @@ export function ClientProvider({ children }: { children: ReactNode }) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await (supabase.rpc as any)("accept_client_invitations");
-      } catch {
-        // ignore
-      }
+      } catch { /* ignore */ }
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.rpc as any)("accept_account_invitations");
+      } catch { /* ignore */ }
       await refresh();
     })();
   }, [user, refresh]);
