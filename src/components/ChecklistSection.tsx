@@ -556,16 +556,16 @@ function ItemImageDialog({ item, onClose, clientId, images, readOnly, onEdit }: 
 
   return (
     <Dialog open={!!item} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle className="pr-8">{item?.title}</DialogTitle></DialogHeader>
         {images.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {images.map((img) => (
-              <div key={img.id} className="relative group aspect-video rounded-lg overflow-hidden border border-border bg-muted">
+              <div key={img.id} className="relative group aspect-video rounded-lg overflow-hidden border border-border bg-muted cursor-zoom-in" onClick={() => setLightboxUrl(img.url)}>
                 <img src={img.url} alt="Referência" className="w-full h-full object-cover" />
                 {!readOnly && clientId && (
-                  <button type="button" onClick={() => remove(img)} title="Remover" className="absolute top-1 right-1 w-6 h-6 rounded-full bg-background/90 text-destructive opacity-0 group-hover:opacity-100 flex items-center justify-center">
-                    <Trash2 className="w-3 h-3" />
+                  <button type="button" onClick={(e) => { e.stopPropagation(); remove(img); }} title="Remover" className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/90 text-destructive opacity-0 group-hover:opacity-100 flex items-center justify-center shadow-sm">
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
