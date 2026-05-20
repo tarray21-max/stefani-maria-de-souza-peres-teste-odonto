@@ -450,7 +450,7 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
         );
       })()}
 
-      <ItemImageDialog item={imageItem} onClose={() => setImageItem(null)} clientId={clientId} images={imageItem ? imageUrlsFor?.(imageItem.id) ?? [] : []} readOnly={readOnly} onEdit={(it) => { setImageItem(null); setEditItem(it); }} />
+      <ItemImageDialog item={imageItem} onClose={() => setImageItem(null)} clientId={clientId} images={imageItem ? imageUrlsFor?.(imageItem.id) ?? [] : []} readOnly={readOnly} onImageClick={setLightboxUrl} onEdit={(it) => { setImageItem(null); setEditItem(it); }} />
       <ItemFormDialog
         open={addInBlockId !== undefined}
         onClose={() => setAddInBlockId(undefined)}
@@ -519,7 +519,7 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
 
 
 function ItemImageDialog({ item, onClose, clientId, images, readOnly, onEdit }: {
-  item: ChecklistItem | null; onClose: () => void; clientId: string | null; images: ImageEntry[]; readOnly?: boolean; onEdit?: (it: ChecklistItem) => void;
+  item: ChecklistItem | null; onClose: () => void; clientId: string | null; images: ImageEntry[]; readOnly?: boolean; onEdit?: (it: ChecklistItem) => void; onImageClick?: (url: string) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -561,7 +561,7 @@ function ItemImageDialog({ item, onClose, clientId, images, readOnly, onEdit }: 
         {images.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {images.map((img) => (
-              <div key={img.id} className="relative group aspect-video rounded-lg overflow-hidden border border-border bg-muted cursor-zoom-in" onClick={() => setLightboxUrl(img.url)}>
+              <div key={img.id} className="relative group aspect-video rounded-lg overflow-hidden border border-border bg-muted cursor-zoom-in" onClick={() => onImageClick?.(img.url)}>
                 <img src={img.url} alt="Referência" className="w-full h-full object-cover" />
                 {!readOnly && clientId && (
                   <button type="button" onClick={(e) => { e.stopPropagation(); remove(img); }} title="Remover" className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/90 text-destructive opacity-0 group-hover:opacity-100 flex items-center justify-center shadow-sm">
