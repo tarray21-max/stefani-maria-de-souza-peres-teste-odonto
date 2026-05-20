@@ -1,8 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { LayoutDashboard, FileText, Building, Wrench, SprayCan, Boxes, Building2, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, FileText, Building, Wrench, SprayCan, Boxes, Building2, Sun, Moon, FileSignature, Pencil } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { useChecklistStore } from "@/lib/use-checklist-store";
 import { useItems } from "@/lib/use-items";
 import { Dashboard } from "@/components/Dashboard";
