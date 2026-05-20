@@ -124,5 +124,5 @@ export function useBlocks(clientId: string | null, category: Category, categoryI
     return blocks.find((b) => b.itemIds.includes(itemId)) ?? null;
   }, [blocks]);
 
-  return { blocks, addBlock, renameBlock, deleteBlock, moveItemToBlock, blockOfItem };
+  return { blocks, addBlock, renameBlock, deleteBlock, moveBlock, moveItemToBlock, blockOfItem };
 }
