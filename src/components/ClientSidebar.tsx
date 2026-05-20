@@ -187,12 +187,31 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
               <div><Label>Especialidade</Label><Input value={editing.especialidade ?? ""} onChange={(e) => setEditing({ ...editing, especialidade: e.target.value })} /></div>
               <div><Label>Telefone</Label><Input inputMode="tel" placeholder="(00) 00000-0000" value={formatPhone(editing.telefone ?? "")} onChange={(e) => setEditing({ ...editing, telefone: formatPhone(e.target.value) })} /></div>
               <div className="md:col-span-2">
-                <Label>Tipo de contrato</Label>
-                <Select value={editing.tipo_contrato ?? "assessoria_odontologica"} onValueChange={(v) => setEditing({ ...editing, tipo_contrato: v as "assessoria_odontologica" | "regularizacao_sanitaria" })}>
+                <div className="flex items-center justify-between">
+                  <Label>Tipo de contrato</Label>
+                  <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setTypesOpen(true)}>
+                    Gerenciar
+                  </Button>
+                </div>
+                <Select
+                  value={editing.contract_type_label ? `custom:${editing.contract_type_label}` : (editing.tipo_contrato ?? "assessoria_odontologica")}
+                  onValueChange={(v) => {
+                    if (v.startsWith("custom:")) {
+                      setEditing({ ...editing, contract_type_label: v.slice("custom:".length) });
+                    } else {
+                      setEditing({ ...editing, tipo_contrato: v as "assessoria_odontologica" | "regularizacao_sanitaria", contract_type_label: null });
+                    }
+                  }}
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="assessoria_odontologica">Assessoria Odontológica</SelectItem>
-                    <SelectItem value="regularizacao_sanitaria">Regularização Sanitária</SelectItem>
+                    {PRESET_CONTRACT_TYPES.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                    ))}
+                    {contractTypes.length > 0 && <SelectSeparator />}
+                    {contractTypes.map((t) => (
+                      <SelectItem key={t.id} value={`custom:${t.label}`}>{t.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -208,6 +227,7 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ContractTypesDialog open={typesOpen} onOpenChange={setTypesOpen} />
     </Sidebar>
   );
 }
