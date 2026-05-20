@@ -450,7 +450,19 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
       })()}
 
       <ItemImageDialog item={imageItem} onClose={() => setImageItem(null)} clientId={clientId} images={imageItem ? imageUrlsFor?.(imageItem.id) ?? [] : []} readOnly={readOnly} onEdit={(it) => { setImageItem(null); setEditItem(it); }} />
-      <ItemFormDialog open={showAdd} onClose={() => setShowAdd(false)} category={category} clientId={clientId} onSaved={() => { setShowAdd(false); onItemsChange?.(); }} />
+      <ItemFormDialog
+        open={addInBlockId !== undefined}
+        onClose={() => setAddInBlockId(undefined)}
+        category={category}
+        clientId={clientId}
+        onSaved={(newId) => {
+          if (newId && addInBlockId) {
+            moveItemToBlock(`c_${newId}`, addInBlockId);
+          }
+          setAddInBlockId(undefined);
+          onItemsChange?.();
+        }}
+      />
       <ItemFormDialog open={!!editItem} onClose={() => setEditItem(null)} category={category} clientId={clientId} item={editItem} onSaved={() => { setEditItem(null); onItemsChange?.(); }} />
 
       <Dialog open={!!renameBlockId} onOpenChange={(o) => !o && setRenameBlockId(null)}>
