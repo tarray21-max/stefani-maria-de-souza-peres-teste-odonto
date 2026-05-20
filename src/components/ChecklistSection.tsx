@@ -235,7 +235,7 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
               const isLeftover = !g.block;
               return (
                 <div key={g.block?.id ?? `__leftover_${gi}`} className="rounded-lg border border-border/60 bg-card overflow-hidden">
-                  {(g.block || (blocks.length > 0 && isLeftover)) && (
+                  {(g.block || !readOnly) && (
                     <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 border-b border-border/60">
                       <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{isLeftover ? "Sem bloco" : "Bloco"}</span>
                       <span className="font-semibold text-sm text-foreground flex-1 truncate">
