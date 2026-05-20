@@ -199,7 +199,7 @@ export function Dashboard({ answers, items, client, categoryLabels, categoryOrde
         ) : (
           <div className="space-y-3">
             {gargalos.map((g, i) => {
-              const cat = CATEGORIES.find((c) => c.id === g.category);
+              const catShort = categoryLabels?.[g.category] ?? DEFAULT_CATEGORY_SHORT[g.category];
               return (
                 <div key={g.id} className="flex items-start gap-4 p-4 rounded-lg bg-danger/5 border border-danger/20">
                   <div className="w-8 h-8 rounded-full bg-danger text-white font-bold flex items-center justify-center flex-shrink-0">
@@ -209,7 +209,7 @@ export function Dashboard({ answers, items, client, categoryLabels, categoryOrde
                     <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="font-semibold text-foreground">{g.title}</h4>
                       <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-background border border-border text-muted-foreground">
-                        {cat?.short}
+                        {catShort}
                       </span>
                     </div>
                   </div>
