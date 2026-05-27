@@ -56,7 +56,15 @@ export function ClientProvider({ children }: { children: ReactNode }) {
       .from("clients")
       .select("*")
       .order("created_at", { ascending: true });
-    if (!error && data) setClients(data as ClientRow[]);
+    if (!error && data) {
+      const rows = (data as unknown as Array<Record<string, unknown>>).map((r) => ({
+        ...r,
+        areas: Array.isArray(r.areas) && r.areas.length > 0
+          ? (r.areas as AreaAtuacao[])
+          : [r.area as AreaAtuacao],
+      })) as ClientRow[];
+      setClients(rows);
+    }
     setLoading(false);
   }, [user]);
 
