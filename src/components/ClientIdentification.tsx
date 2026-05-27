@@ -137,9 +137,11 @@ export function ClientIdentification() {
               <div className="min-w-0">
                 <div className="font-semibold text-foreground">{current.nome}</div>
                 <div className="text-xs text-muted-foreground truncate">
-                  {[current.area === "odontologia" ? "Odontologia" : "Medicina", current.especialidade, current.cnpj]
-                    .filter(Boolean)
-                    .join(" • ")}
+                  {[
+                    (current.areas && current.areas.length > 0 ? current.areas : [current.area]).map((a) => AREA_LABEL[a] ?? a).join(" + "),
+                    current.especialidade,
+                    current.cnpj,
+                  ].filter(Boolean).join(" • ")}
                 </div>
                 <div className="text-xs text-muted-foreground truncate">
                   {[current.profissional_responsavel, current.telefone, current.endereco].filter(Boolean).join(" • ")}
