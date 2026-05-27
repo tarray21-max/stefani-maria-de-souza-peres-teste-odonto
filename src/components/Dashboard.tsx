@@ -93,7 +93,11 @@ export function Dashboard({ answers, items, client, categoryLabels, categoryOrde
               </Button>
             </div>
             <div className="mt-1 text-xs uppercase tracking-wider text-white/70">
-              {client?.area === "medicina" ? "Medicina" : "Odontologia"}
+              {(() => {
+                const labels: Record<string, string> = { medicina: "Médica", odontologia: "Odontológica", biomedicina: "Biomédica" };
+                const areas = client?.areas && client.areas.length > 0 ? client.areas : (client?.area ? [client.area] : []);
+                return areas.map((a) => labels[a] ?? a).join(" + ");
+              })()}
             </div>
 
             {clinicaItems.length > 0 ? (

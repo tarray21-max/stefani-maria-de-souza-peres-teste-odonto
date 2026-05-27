@@ -187,6 +187,7 @@ export type Database = {
       clients: {
         Row: {
           area: Database["public"]["Enums"]["area_atuacao"]
+          areas: string[]
           cnpj: string | null
           contract_type_label: string | null
           created_at: string
@@ -202,6 +203,7 @@ export type Database = {
         }
         Insert: {
           area?: Database["public"]["Enums"]["area_atuacao"]
+          areas?: string[]
           cnpj?: string | null
           contract_type_label?: string | null
           created_at?: string
@@ -217,6 +219,7 @@ export type Database = {
         }
         Update: {
           area?: Database["public"]["Enums"]["area_atuacao"]
+          areas?: string[]
           cnpj?: string | null
           contract_type_label?: string | null
           created_at?: string
