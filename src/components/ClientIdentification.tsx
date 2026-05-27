@@ -71,13 +71,18 @@ export function ClientIdentification() {
   const save = async () => {
     if (!user) return;
     if (!draft.nome?.trim()) return toast.error("Informe o nome da clínica");
+    const areas = (draft.areas && draft.areas.length > 0 ? draft.areas : (draft.area ? [draft.area] : [])) as AreaAtuacao[];
+    if (areas.length === 0) return toast.error("Selecione ao menos uma categoria");
     setBusy(true);
     const tipo = (PRESET_VALUES.has(draft.tipo_contrato ?? "") ? draft.tipo_contrato : "assessoria_odontologica") as "assessoria_odontologica" | "regularizacao_sanitaria";
+    // `area` column only accepts the legacy enum (odontologia | medicina); pick a compatible primary
+    const legacyArea = (areas.find((a) => a === "odontologia" || a === "medicina") ?? "odontologia") as "odontologia" | "medicina";
     const payload = {
       nome: draft.nome,
       cnpj: draft.cnpj ?? null,
       profissional_responsavel: draft.profissional_responsavel ?? null,
-      area: (draft.area as "odontologia" | "medicina") ?? "odontologia",
+      area: legacyArea,
+      areas,
       especialidade: draft.especialidade ?? null,
       endereco: draft.endereco ?? null,
       telefone: draft.telefone ?? null,
@@ -85,10 +90,12 @@ export function ClientIdentification() {
       contract_type_label: draft.contract_type_label ?? null,
     };
     if (draft.id) {
-      const { error } = await supabase.from("clients").update(payload).eq("id", draft.id);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await supabase.from("clients").update(payload as any).eq("id", draft.id);
       if (error) { setBusy(false); return toast.error(error.message); }
     } else {
-      const { error } = await supabase.from("clients").insert({ ...payload, owner_id: user.id });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await supabase.from("clients").insert({ ...payload, owner_id: user.id } as any);
       if (error) { setBusy(false); return toast.error(error.message); }
       const { data: list } = await supabase
         .from("clients")
