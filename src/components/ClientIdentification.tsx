@@ -191,14 +191,18 @@ export function ClientIdentification() {
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <Label>Área</Label>
-            <Select value={draft.area ?? "odontologia"} onValueChange={(v) => setDraft({ ...draft, area: v as "odontologia" | "medicina" })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="odontologia">Odontologia</SelectItem>
-                <SelectItem value="medicina">Medicina</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label>Categorias</Label>
+            <div className="border rounded-md p-2 space-y-1.5 bg-background">
+              {AREA_OPTIONS.map((opt) => {
+                const checked = (draft.areas ?? (draft.area ? [draft.area] : [])).includes(opt.value);
+                return (
+                  <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox checked={checked} onCheckedChange={() => toggleArea(opt.value)} />
+                    <span>{opt.label}</span>
+                  </label>
+                );
+              })}
+            </div>
           </div>
           <div>
             <Label>Especialidade</Label>
