@@ -2,13 +2,16 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./auth-context";
 
+export type AreaAtuacao = "odontologia" | "medicina" | "biomedicina";
+
 export interface ClientRow {
   id: string;
   owner_id: string;
   nome: string;
   cnpj: string | null;
   profissional_responsavel: string | null;
-  area: "odontologia" | "medicina";
+  area: AreaAtuacao;
+  areas: AreaAtuacao[];
   especialidade: string | null;
   endereco: string | null;
   telefone: string | null;
