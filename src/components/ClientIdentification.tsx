@@ -31,6 +31,18 @@ function serializeContract(c: Pick<ClientRow, "tipo_contrato" | "contract_type_l
   return c.tipo_contrato;
 }
 
+const AREA_OPTIONS: { value: AreaAtuacao; label: string }[] = [
+  { value: "medicina", label: "Médica" },
+  { value: "odontologia", label: "Odontológica" },
+  { value: "biomedicina", label: "Biomédica" },
+];
+
+const AREA_LABEL: Record<AreaAtuacao, string> = {
+  medicina: "Médica",
+  odontologia: "Odontológica",
+  biomedicina: "Biomédica",
+};
+
 export function ClientIdentification() {
   const { user } = useAuth();
   const { current, setCurrentId, refresh } = useClients();
@@ -39,15 +51,21 @@ export function ClientIdentification() {
   const [busy, setBusy] = useState(false);
   const [typesOpen, setTypesOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  const [draft, setDraft] = useState<Partial<ClientRow>>(() => current ?? { area: "odontologia", tipo_contrato: "assessoria_odontologica", contract_type_label: null });
+  const [draft, setDraft] = useState<Partial<ClientRow>>(() => current ?? { area: "odontologia", areas: ["odontologia"], tipo_contrato: "assessoria_odontologica", contract_type_label: null });
 
   const startNew = () => {
-    setDraft({ area: "odontologia", tipo_contrato: "assessoria_odontologica", contract_type_label: null, nome: "" });
+    setDraft({ area: "odontologia", areas: ["odontologia"], tipo_contrato: "assessoria_odontologica", contract_type_label: null, nome: "" });
     setEditing(true);
   };
   const startEdit = () => {
     setDraft(current ?? {});
     setEditing(true);
+  };
+
+  const toggleArea = (value: AreaAtuacao) => {
+    const cur = draft.areas ?? (draft.area ? [draft.area] : []);
+    const next = cur.includes(value) ? cur.filter((a) => a !== value) : [...cur, value];
+    setDraft({ ...draft, areas: next, area: (next[0] ?? draft.area ?? "odontologia") as AreaAtuacao });
   };
 
   const save = async () => {
