@@ -207,8 +207,44 @@ export function ClientIdentification() {
             </div>
           </div>
           <div>
-            <Label>Especialidade</Label>
-            <Input value={draft.especialidade ?? ""} onChange={(e) => setDraft({ ...draft, especialidade: e.target.value })} />
+            <Label>Especialidades</Label>
+            <div className="border rounded-md p-2 bg-background min-h-9 flex flex-wrap gap-1.5 items-center">
+              {(draft.especialidades ?? []).map((esp, idx) => (
+                <span key={`${esp}-${idx}`} className="inline-flex items-center gap-1 text-xs bg-muted px-2 py-0.5 rounded-full">
+                  {esp}
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={() => setDraft({ ...draft, especialidades: (draft.especialidades ?? []).filter((_, i) => i !== idx) })}
+                    aria-label={`Remover ${esp}`}
+                  >×</button>
+                </span>
+              ))}
+              <input
+                className="flex-1 min-w-[8ch] bg-transparent outline-none text-sm py-0.5"
+                placeholder="Digite e pressione Enter"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === ",") {
+                    e.preventDefault();
+                    const val = (e.currentTarget.value ?? "").trim();
+                    if (!val) return;
+                    const cur = draft.especialidades ?? [];
+                    if (!cur.includes(val)) setDraft({ ...draft, especialidades: [...cur, val] });
+                    e.currentTarget.value = "";
+                  } else if (e.key === "Backspace" && !(e.currentTarget.value ?? "")) {
+                    const cur = draft.especialidades ?? [];
+                    if (cur.length > 0) setDraft({ ...draft, especialidades: cur.slice(0, -1) });
+                  }
+                }}
+                onBlur={(e) => {
+                  const val = (e.currentTarget.value ?? "").trim();
+                  if (!val) return;
+                  const cur = draft.especialidades ?? [];
+                  if (!cur.includes(val)) setDraft({ ...draft, especialidades: [...cur, val] });
+                  e.currentTarget.value = "";
+                }}
+              />
+            </div>
           </div>
         </div>
         <div>
