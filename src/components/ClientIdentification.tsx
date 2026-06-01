@@ -16,14 +16,14 @@ import { toast } from "sonner";
 import { Building2, Plus, Save, Settings2, Share2 } from "lucide-react";
 
 type ContractValue =
-  | { kind: "preset"; value: "assessoria_odontologica" | "regularizacao_sanitaria" }
+  | { kind: "preset"; value: "assessoria_odontologica" | "assessoria_medica" | "regularizacao_sanitaria" }
   | { kind: "custom"; label: string };
 
 const PRESET_VALUES = new Set(PRESET_CONTRACT_TYPES.map((p) => p.value));
 
 function parseContractSelect(raw: string): ContractValue {
   if (raw.startsWith("custom:")) return { kind: "custom", label: raw.slice("custom:".length) };
-  return { kind: "preset", value: raw as "assessoria_odontologica" | "regularizacao_sanitaria" };
+  return { kind: "preset", value: raw as "assessoria_odontologica" | "assessoria_medica" | "regularizacao_sanitaria" };
 }
 
 function serializeContract(c: Pick<ClientRow, "tipo_contrato" | "contract_type_label">): string {
