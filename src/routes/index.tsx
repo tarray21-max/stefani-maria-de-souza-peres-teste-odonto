@@ -168,6 +168,7 @@ function ClientWorkspace({ clientId }: { clientId: string }) {
         setAnswer={setAnswer}
         setQuality={setQuality}
         setJustification={setJustification}
+        setValidity={setValidity}
         refreshItems={refreshItems}
         imageUrlsFor={imageUrlsFor}
         positions={positions}
