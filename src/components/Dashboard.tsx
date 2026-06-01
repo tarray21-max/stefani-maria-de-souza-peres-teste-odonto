@@ -54,7 +54,7 @@ export function Dashboard({ answers, items, client, categoryLabels, categoryOrde
   const clinicaItems = client
     ? [
         { icon: User, label: "Responsável Técnico", value: client.profissional_responsavel },
-        { icon: Stethoscope, label: "Especialidade", value: client.especialidade },
+        { icon: Stethoscope, label: "Especialidades", value: (client.especialidades && client.especialidades.length > 0 ? client.especialidades.join(", ") : client.especialidade) },
         { icon: Hash, label: "CNPJ", value: formatCNPJ(client.cnpj) },
         { icon: Briefcase, label: "Contrato", value: contractLabel(client) },
         { icon: Phone, label: "Telefone", value: formatPhone(client.telefone) },
