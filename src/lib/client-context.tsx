@@ -133,5 +133,10 @@ export const useClients = () => useContext(Ctx);
 
 export function contractLabel(c: Pick<ClientRow, "tipo_contrato" | "contract_type_label">): string {
   if (c.contract_type_label && c.contract_type_label.trim()) return c.contract_type_label;
-  return c.tipo_contrato === "assessoria_odontologica" ? "Assessoria Odontológica" : "Regularização Sanitária";
+  const map: Record<ClientRow["tipo_contrato"], string> = {
+    assessoria_odontologica: "Assessoria Odontológica",
+    assessoria_medica: "Assessoria Médica",
+    regularizacao_sanitaria: "Regularização Sanitária",
+  };
+  return map[c.tipo_contrato] ?? c.tipo_contrato;
 }
