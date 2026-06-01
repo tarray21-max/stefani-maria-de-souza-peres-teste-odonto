@@ -141,7 +141,7 @@ export function ClientIdentification() {
                 <div className="text-xs text-muted-foreground truncate">
                   {[
                     (current.areas && current.areas.length > 0 ? current.areas : [current.area]).map((a) => AREA_LABEL[a] ?? a).join(" + "),
-                    current.especialidade,
+                    (current.especialidades && current.especialidades.length > 0 ? current.especialidades.join(", ") : current.especialidade),
                     current.cnpj,
                   ].filter(Boolean).join(" • ")}
                 </div>
