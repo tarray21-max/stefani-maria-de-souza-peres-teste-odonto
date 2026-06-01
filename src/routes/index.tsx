@@ -130,7 +130,7 @@ function EmptyState() {
 
 function ClientWorkspace({ clientId }: { clientId: string }) {
   const { current } = useClients();
-  const { answers, setAnswer, setQuality, setJustification, reset, loaded } = useChecklistStore(clientId);
+  const { answers, setAnswer, setQuality, setJustification, setValidity, reset, loaded } = useChecklistStore(clientId);
   const { items, refresh: refreshItems, imageUrlsFor, positions, reorderCategory } = useItems(clientId);
   const { prefs, saveLabels, saveOrder } = useUiPrefs(clientId);
   const labels = prefs.tab_labels;
