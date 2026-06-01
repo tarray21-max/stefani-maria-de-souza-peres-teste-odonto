@@ -54,12 +54,19 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
     if (!user || !editing) return;
     if (!editing.nome?.trim()) return toast.error("Informe o nome da clínica");
     const tipo = (PRESET_VALUES.has(editing.tipo_contrato ?? "") ? editing.tipo_contrato : "assessoria_odontologica") as "assessoria_odontologica" | "assessoria_medica" | "regularizacao_sanitaria";
+    const area = (editing.area ?? "odontologia") as "odontologia" | "medicina";
+    const areas = (editing.areas && editing.areas.length > 0 ? editing.areas : [area]) as ("odontologia" | "medicina" | "biomedicina")[];
+    const especialidades = (editing.especialidades && editing.especialidades.length > 0)
+      ? editing.especialidades
+      : (editing.especialidade ? [editing.especialidade] : []);
     const payload = {
       nome: editing.nome,
       cnpj: editing.cnpj ?? null,
       profissional_responsavel: editing.profissional_responsavel ?? null,
-      area: (editing.area ?? "odontologia") as "odontologia" | "medicina",
-      especialidade: editing.especialidade ?? null,
+      area,
+      areas,
+      especialidade: especialidades[0] ?? editing.especialidade ?? null,
+      especialidades,
       endereco: editing.endereco ?? null,
       telefone: editing.telefone ?? null,
       tipo_contrato: tipo,
