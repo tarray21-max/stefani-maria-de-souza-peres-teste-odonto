@@ -293,13 +293,13 @@ function TabsWithRename(props: {
       {CATEGORIES.map((c) => (
         <TabsContent key={c.id} value={c.id} className="mt-5">
           <SectionHeader title={label(c.id)} subtitle={`${items.filter((i) => i.category === c.id).length} requisitos neste grupo.`} />
-          <ChecklistSection category={c.id} items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} positions={positions} reorderCategory={reorderCategory} />
+          <ChecklistSection category={c.id} items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} setValidity={setValidity} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} positions={positions} reorderCategory={reorderCategory} />
         </TabsContent>
       ))}
 
       <TabsContent value="tcle_pop" className="mt-5">
         <SectionHeader title={label("tcle_pop")} subtitle="Indique se cada serviço prestado possui TCLE e POP correspondentes." />
-        <ChecklistSection category="tcle_pop" items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} positions={positions} reorderCategory={reorderCategory} />
+        <ChecklistSection category="tcle_pop" items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} setValidity={setValidity} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} positions={positions} reorderCategory={reorderCategory} />
         <ServiceMatrix answers={answers} setAnswer={setAnswer} clientId={clientId} />
       </TabsContent>
 
