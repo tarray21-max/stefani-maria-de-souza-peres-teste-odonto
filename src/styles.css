@@ -175,3 +175,28 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
     color: var(--color-foreground);
   }
 }
+
+/* ===== Print: relatório final ===== */
+@media print {
+  @page { size: A4; margin: 14mm 12mm; }
+  html, body { background: #fff !important; color: #000 !important; }
+  body * { visibility: hidden !important; }
+  .print-report, .print-report * { visibility: visible !important; }
+  .print-report {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: none !important;
+  }
+  .print-hide { display: none !important; }
+  .print-report .page-break { page-break-before: always; }
+  .print-report h1, .print-report h2, .print-report h3 { color: #000 !important; }
+  .print-report table { page-break-inside: auto; }
+  .print-report tr, .print-report .avoid-break { page-break-inside: avoid; }
+}
+

@@ -16,6 +16,7 @@ import { EvolutionTimeline } from "@/components/EvolutionTimeline";
 import { VisitorLinks } from "@/components/VisitorLinks";
 import { ClientSidebar } from "@/components/ClientSidebar";
 import { ServiceMatrix } from "@/components/ServiceMatrix";
+import { FinalReportButton } from "@/components/FinalReport";
 import { CATEGORIES, computeMaturity, scoreColorVar, type BaseCategory, type Category } from "@/lib/checklist-data";
 import { useAuth } from "@/lib/auth-context";
 import { useClients } from "@/lib/client-context";
@@ -156,6 +157,7 @@ function ClientWorkspace({ clientId }: { clientId: string }) {
         </div>
         <div className="flex items-center gap-2">
           <VisitorLinks clientId={clientId} />
+          <FinalReportButton client={current ?? null} answers={answers} items={items} categoryLabels={dashboardLabels} />
           <ResetButton onConfirm={(j) => reset(j)} />
         </div>
       </div>
