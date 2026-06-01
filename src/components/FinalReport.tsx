@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Printer, FileDown } from "lucide-react";
@@ -270,8 +270,7 @@ function FinalReportTrigger({ disabled, ...rest }: Omit<Props, "open" | "onOpenC
   );
 }
 
-// tiny local hook to avoid importing React for state in this file's top scope
-import { useState } from "react";
 function useStateOpen() {
   return useState(false);
 }
+
