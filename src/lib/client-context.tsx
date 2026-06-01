@@ -15,8 +15,9 @@ export interface ClientRow {
   especialidade: string | null;
   endereco: string | null;
   telefone: string | null;
-  tipo_contrato: "assessoria_odontologica" | "regularizacao_sanitaria";
+  tipo_contrato: "assessoria_odontologica" | "assessoria_medica" | "regularizacao_sanitaria";
   contract_type_label: string | null;
+  especialidades: string[];
 }
 
 interface ClientCtx {
@@ -62,6 +63,9 @@ export function ClientProvider({ children }: { children: ReactNode }) {
         areas: Array.isArray(r.areas) && r.areas.length > 0
           ? (r.areas as AreaAtuacao[])
           : [r.area as AreaAtuacao],
+        especialidades: Array.isArray(r.especialidades) && r.especialidades.length > 0
+          ? (r.especialidades as string[])
+          : (r.especialidade ? [r.especialidade as string] : []),
       })) as ClientRow[];
       setClients(rows);
     }
@@ -129,5 +133,10 @@ export const useClients = () => useContext(Ctx);
 
 export function contractLabel(c: Pick<ClientRow, "tipo_contrato" | "contract_type_label">): string {
   if (c.contract_type_label && c.contract_type_label.trim()) return c.contract_type_label;
-  return c.tipo_contrato === "assessoria_odontologica" ? "Assessoria Odontológica" : "Regularização Sanitária";
+  const map: Record<ClientRow["tipo_contrato"], string> = {
+    assessoria_odontologica: "Assessoria Odontológica",
+    assessoria_medica: "Assessoria Médica",
+    regularizacao_sanitaria: "Regularização Sanitária",
+  };
+  return map[c.tipo_contrato] ?? c.tipo_contrato;
 }

@@ -16,14 +16,14 @@ import { toast } from "sonner";
 import { Building2, Plus, Save, Settings2, Share2 } from "lucide-react";
 
 type ContractValue =
-  | { kind: "preset"; value: "assessoria_odontologica" | "regularizacao_sanitaria" }
+  | { kind: "preset"; value: "assessoria_odontologica" | "assessoria_medica" | "regularizacao_sanitaria" }
   | { kind: "custom"; label: string };
 
 const PRESET_VALUES = new Set(PRESET_CONTRACT_TYPES.map((p) => p.value));
 
 function parseContractSelect(raw: string): ContractValue {
   if (raw.startsWith("custom:")) return { kind: "custom", label: raw.slice("custom:".length) };
-  return { kind: "preset", value: raw as "assessoria_odontologica" | "regularizacao_sanitaria" };
+  return { kind: "preset", value: raw as "assessoria_odontologica" | "assessoria_medica" | "regularizacao_sanitaria" };
 }
 
 function serializeContract(c: Pick<ClientRow, "tipo_contrato" | "contract_type_label">): string {
@@ -54,7 +54,7 @@ export function ClientIdentification() {
   const [draft, setDraft] = useState<Partial<ClientRow>>(() => current ?? { area: "odontologia", areas: ["odontologia"], tipo_contrato: "assessoria_odontologica", contract_type_label: null });
 
   const startNew = () => {
-    setDraft({ area: "odontologia", areas: ["odontologia"], tipo_contrato: "assessoria_odontologica", contract_type_label: null, nome: "" });
+    setDraft({ area: "odontologia", areas: ["odontologia"], especialidades: [], tipo_contrato: "assessoria_odontologica", contract_type_label: null, nome: "" });
     setEditing(true);
   };
   const startEdit = () => {
@@ -74,16 +74,18 @@ export function ClientIdentification() {
     const areas = (draft.areas && draft.areas.length > 0 ? draft.areas : (draft.area ? [draft.area] : [])) as AreaAtuacao[];
     if (areas.length === 0) return toast.error("Selecione ao menos uma categoria");
     setBusy(true);
-    const tipo = (PRESET_VALUES.has(draft.tipo_contrato ?? "") ? draft.tipo_contrato : "assessoria_odontologica") as "assessoria_odontologica" | "regularizacao_sanitaria";
+    const tipo = (PRESET_VALUES.has(draft.tipo_contrato ?? "") ? draft.tipo_contrato : "assessoria_odontologica") as "assessoria_odontologica" | "assessoria_medica" | "regularizacao_sanitaria";
     // `area` column only accepts the legacy enum (odontologia | medicina); pick a compatible primary
     const legacyArea = (areas.find((a) => a === "odontologia" || a === "medicina") ?? "odontologia") as "odontologia" | "medicina";
+    const especialidades = (draft.especialidades ?? []).map((s) => s.trim()).filter(Boolean);
     const payload = {
       nome: draft.nome,
       cnpj: draft.cnpj ?? null,
       profissional_responsavel: draft.profissional_responsavel ?? null,
       area: legacyArea,
       areas,
-      especialidade: draft.especialidade ?? null,
+      especialidade: especialidades[0] ?? draft.especialidade ?? null,
+      especialidades,
       endereco: draft.endereco ?? null,
       telefone: draft.telefone ?? null,
       tipo_contrato: tipo,
@@ -139,7 +141,7 @@ export function ClientIdentification() {
                 <div className="text-xs text-muted-foreground truncate">
                   {[
                     (current.areas && current.areas.length > 0 ? current.areas : [current.area]).map((a) => AREA_LABEL[a] ?? a).join(" + "),
-                    current.especialidade,
+                    (current.especialidades && current.especialidades.length > 0 ? current.especialidades.join(", ") : current.especialidade),
                     current.cnpj,
                   ].filter(Boolean).join(" • ")}
                 </div>
@@ -205,8 +207,44 @@ export function ClientIdentification() {
             </div>
           </div>
           <div>
-            <Label>Especialidade</Label>
-            <Input value={draft.especialidade ?? ""} onChange={(e) => setDraft({ ...draft, especialidade: e.target.value })} />
+            <Label>Especialidades</Label>
+            <div className="border rounded-md p-2 bg-background min-h-9 flex flex-wrap gap-1.5 items-center">
+              {(draft.especialidades ?? []).map((esp, idx) => (
+                <span key={`${esp}-${idx}`} className="inline-flex items-center gap-1 text-xs bg-muted px-2 py-0.5 rounded-full">
+                  {esp}
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={() => setDraft({ ...draft, especialidades: (draft.especialidades ?? []).filter((_, i) => i !== idx) })}
+                    aria-label={`Remover ${esp}`}
+                  >×</button>
+                </span>
+              ))}
+              <input
+                className="flex-1 min-w-[8ch] bg-transparent outline-none text-sm py-0.5"
+                placeholder="Digite e pressione Enter"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === ",") {
+                    e.preventDefault();
+                    const val = (e.currentTarget.value ?? "").trim();
+                    if (!val) return;
+                    const cur = draft.especialidades ?? [];
+                    if (!cur.includes(val)) setDraft({ ...draft, especialidades: [...cur, val] });
+                    e.currentTarget.value = "";
+                  } else if (e.key === "Backspace" && !(e.currentTarget.value ?? "")) {
+                    const cur = draft.especialidades ?? [];
+                    if (cur.length > 0) setDraft({ ...draft, especialidades: cur.slice(0, -1) });
+                  }
+                }}
+                onBlur={(e) => {
+                  const val = (e.currentTarget.value ?? "").trim();
+                  if (!val) return;
+                  const cur = draft.especialidades ?? [];
+                  if (!cur.includes(val)) setDraft({ ...draft, especialidades: [...cur, val] });
+                  e.currentTarget.value = "";
+                }}
+              />
+            </div>
           </div>
         </div>
         <div>

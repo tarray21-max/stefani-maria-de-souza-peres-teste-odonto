@@ -53,7 +53,7 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
   const save = async () => {
     if (!user || !editing) return;
     if (!editing.nome?.trim()) return toast.error("Informe o nome da clínica");
-    const tipo = (PRESET_VALUES.has(editing.tipo_contrato ?? "") ? editing.tipo_contrato : "assessoria_odontologica") as "assessoria_odontologica" | "regularizacao_sanitaria";
+    const tipo = (PRESET_VALUES.has(editing.tipo_contrato ?? "") ? editing.tipo_contrato : "assessoria_odontologica") as "assessoria_odontologica" | "assessoria_medica" | "regularizacao_sanitaria";
     const payload = {
       nome: editing.nome,
       cnpj: editing.cnpj ?? null,
