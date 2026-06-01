@@ -63,6 +63,9 @@ export function ClientProvider({ children }: { children: ReactNode }) {
         areas: Array.isArray(r.areas) && r.areas.length > 0
           ? (r.areas as AreaAtuacao[])
           : [r.area as AreaAtuacao],
+        especialidades: Array.isArray(r.especialidades) && r.especialidades.length > 0
+          ? (r.especialidades as string[])
+          : (r.especialidade ? [r.especialidade as string] : []),
       })) as ClientRow[];
       setClients(rows);
     }
