@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Answer, Category, ChecklistItem, Quality, ResponseMap } from "@/lib/checklist-data";
-import { Check, X, MinusCircle, Search, MessageSquare, Image as ImageIcon, Plus, Trash2, Pencil, Upload, Eraser, GripVertical, MoreVertical, FolderPlus, FolderInput, ArrowUp, ArrowDown } from "lucide-react";
+import { getValidityStatus, type ValidityStatus } from "@/lib/checklist-data";
+import { Check, X, MinusCircle, Search, MessageSquare, Image as ImageIcon, Plus, Trash2, Pencil, Upload, Eraser, GripVertical, MoreVertical, FolderPlus, FolderInput, ArrowUp, ArrowDown, CalendarClock, Infinity as InfinityIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +36,7 @@ interface Props {
   setAnswer: (id: string, value: Answer) => void;
   setQuality?: (id: string, quality: Quality) => void;
   setJustification?: (id: string, value: string) => void;
+  setValidity?: (id: string, validity: { date: string | null; indeterminate: boolean }) => void;
   clientId: string | null;
   onItemsChange?: () => void;
   imageUrlsFor?: (itemId: string) => ImageEntry[];
@@ -47,7 +51,7 @@ const OPTIONS: { value: Exclude<Answer, null>; label: string; icon: typeof Check
   { value: "na", label: "N/A", icon: MinusCircle, activeClass: "bg-muted-foreground text-white border-muted-foreground" },
 ];
 
-export function ChecklistSection({ category, items: allItems, answers, setAnswer, setQuality, setJustification, clientId, onItemsChange, imageUrlsFor, positions, reorderCategory, readOnly }: Props) {
+export function ChecklistSection({ category, items: allItems, answers, setAnswer, setQuality, setJustification, setValidity, clientId, onItemsChange, imageUrlsFor, positions, reorderCategory, readOnly }: Props) {
   const [renameBlockId, setRenameBlockId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [deleteBlockId, setDeleteBlockId] = useState<string | null>(null);
@@ -429,6 +433,14 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
                               </button>
                             )}
 
+                            {setValidity && (
+                              <ValidityControl
+                                value={{ date: resp?.validity_date ?? null, indeterminate: resp?.validity_indeterminate ?? false }}
+                                onChange={(v) => setValidity(item.id, v)}
+                                readOnly={readOnly}
+                              />
+                            )}
+
                             {setJustification && (
                               <button type="button" title="Justificativa" onClick={() => setOpenId(isOpen ? null : item.id)}
                                 className={cn("flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary", isOpen && "bg-primary text-white", resp?.justification && !isOpen && "text-primary")}>
@@ -702,4 +714,89 @@ function ItemFormDialog({ open, onClose, category, clientId, item, onSaved }: {
       </DialogContent>
     </Dialog>
   );
+}
+
+function ValidityControl({ value, onChange, readOnly }: {
+  value: { date: string | null; indeterminate: boolean };
+  onChange: (v: { date: string | null; indeterminate: boolean }) => void;
+  readOnly?: boolean;
+}) {
+  const { status, days } = getValidityStatus({ validity_date: value.date, validity_indeterminate: value.indeterminate });
+  const [open, setOpen] = useState(false);
+  const [draftDate, setDraftDate] = useState(value.date ?? "");
+  const [draftInd, setDraftInd] = useState(value.indeterminate);
+
+  useEffect(() => {
+    if (open) {
+      setDraftDate(value.date ?? "");
+      setDraftInd(value.indeterminate);
+    }
+  }, [open, value.date, value.indeterminate]);
+
+  const styles: Record<ValidityStatus, { cls: string; label: string; title: string }> = {
+    none: { cls: "border-dashed border-border text-muted-foreground", label: "Validade", title: "Definir validade" },
+    indeterminate: { cls: "border-border text-foreground bg-muted", label: "∞", title: "Validade indeterminada" },
+    expired: { cls: "border-danger bg-danger text-white", label: days != null ? `Vencido ${Math.abs(days)}d` : "Vencido", title: "Vencido" },
+    d15: { cls: "border-danger text-danger bg-danger/10", label: `${days}d`, title: "Vence em até 15 dias" },
+    d30: { cls: "border-amber-500 text-amber-700 dark:text-amber-400 bg-amber-500/10", label: `${days}d`, title: "Vence em até 30 dias" },
+    d60: { cls: "border-warning text-warning bg-warning/10", label: `${days}d`, title: "Vence em até 60 dias" },
+    ok: { cls: "border-success/40 text-success bg-success/5", label: value.date ? formatBR(value.date) : "OK", title: "Em dia" },
+  };
+  const s = styles[status];
+
+  const apply = () => {
+    if (draftInd) onChange({ date: null, indeterminate: true });
+    else onChange({ date: draftDate || null, indeterminate: false });
+    setOpen(false);
+  };
+  const clear = () => {
+    onChange({ date: null, indeterminate: false });
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={readOnly ? undefined : setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          title={s.title}
+          disabled={readOnly}
+          className={cn(
+            "flex-shrink-0 inline-flex items-center gap-1 h-6 px-1.5 rounded border text-[10px] font-semibold transition-colors",
+            s.cls,
+          )}
+        >
+          {status === "indeterminate" ? <InfinityIcon className="w-3 h-3" /> : <CalendarClock className="w-3 h-3" />}
+          <span className="whitespace-nowrap">{s.label}</span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64 p-3 space-y-3">
+        <div className="text-xs font-semibold text-foreground">Validade do documento</div>
+        <div className="space-y-1.5">
+          <Label className="text-[11px] text-muted-foreground">Data de validade</Label>
+          <Input
+            type="date"
+            value={draftDate}
+            onChange={(e) => { setDraftDate(e.target.value); if (e.target.value) setDraftInd(false); }}
+            disabled={draftInd}
+            className="h-8 text-xs"
+          />
+        </div>
+        <label className="flex items-center gap-2 text-xs cursor-pointer">
+          <Checkbox checked={draftInd} onCheckedChange={(c) => { setDraftInd(!!c); if (c) setDraftDate(""); }} />
+          <span>Indeterminado (sem validade)</span>
+        </label>
+        <div className="flex items-center justify-between gap-2 pt-1">
+          <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={clear}>Limpar</Button>
+          <Button type="button" size="sm" className="h-7 text-xs" onClick={apply}>Salvar</Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function formatBR(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  if (!y || !m || !d) return iso;
+  return `${d}/${m}/${y.slice(2)}`;
 }

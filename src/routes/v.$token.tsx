@@ -58,12 +58,12 @@ function VisitorView() {
     })),
   ];
   const answers: ResponseMap = {};
-  for (const r of state.responses) answers[r.item_id] = { answer: r.answer, quality: r.quality, justification: r.justification ?? "" };
+  for (const r of state.responses) answers[r.item_id] = { answer: r.answer, quality: r.quality, justification: r.justification ?? "", validity_date: (r as { validity_date?: string | null }).validity_date ?? null, validity_indeterminate: (r as { validity_indeterminate?: boolean }).validity_indeterminate ?? false };
 
   const canEdit = state.mode === "edit";
   const set = async (item_id: string, patch: { answer?: Answer; quality?: Quality; justification?: string }) => {
     if (!canEdit) return;
-    const cur = answers[item_id] ?? { answer: null, quality: null, justification: "" };
+    const cur = answers[item_id] ?? { answer: null, quality: null, justification: "", validity_date: null, validity_indeterminate: false };
     const next = { ...cur, ...patch };
     setState((s) => s ? { ...s, responses: [...s.responses.filter((r) => r.item_id !== item_id), { item_id, ...next }] } : s);
     const { error } = await supabase.rpc("visitor_set_answer", { _token: token, _item_id: item_id, _answer: next.answer ?? "", _quality: next.quality ?? "", _justification: next.justification ?? "" });

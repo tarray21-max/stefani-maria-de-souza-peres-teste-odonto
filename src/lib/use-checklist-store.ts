@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import type { Answer, Quality, ResponseMap } from "./checklist-data";
+import type { Answer, Quality, ResponseMap, ItemResponse } from "./checklist-data";
 import { EMPTY_RESPONSE } from "./checklist-data";
 
 /**
@@ -24,15 +24,17 @@ export function useChecklistStore(clientId: string | null) {
     (async () => {
       const { data } = await supabase
         .from("responses")
-        .select("item_id, answer, quality, justification")
+        .select("item_id, answer, quality, justification, validity_date, validity_indeterminate")
         .eq("client_id", clientId);
       if (!active) return;
       const map: ResponseMap = {};
-      for (const r of data ?? []) {
-        map[r.item_id] = {
+      for (const r of (data ?? []) as Array<Record<string, unknown>>) {
+        map[r.item_id as string] = {
           answer: (r.answer as Answer | null) ?? null,
           quality: (r.quality as Quality | null) ?? null,
-          justification: r.justification ?? "",
+          justification: (r.justification as string | null) ?? "",
+          validity_date: (r.validity_date as string | null) ?? null,
+          validity_indeterminate: Boolean(r.validity_indeterminate),
         };
       }
       setResponses(map);
@@ -58,18 +60,15 @@ export function useChecklistStore(clientId: string | null) {
             }
             return;
           }
-          const r = payload.new as {
-            item_id: string;
-            answer: Answer | null;
-            quality: Quality | null;
-            justification: string | null;
-          };
+          const r = payload.new as Record<string, unknown>;
           setResponses((p) => ({
             ...p,
-            [r.item_id]: {
-              answer: r.answer ?? null,
-              quality: r.quality ?? null,
-              justification: r.justification ?? "",
+            [r.item_id as string]: {
+              answer: (r.answer as Answer | null) ?? null,
+              quality: (r.quality as Quality | null) ?? null,
+              justification: (r.justification as string | null) ?? "",
+              validity_date: (r.validity_date as string | null) ?? null,
+              validity_indeterminate: Boolean(r.validity_indeterminate),
             },
           }));
         },
@@ -83,7 +82,7 @@ export function useChecklistStore(clientId: string | null) {
   }, [clientId]);
 
   const persist = useCallback(
-    (id: string, payload: { answer: Answer | null; quality: Quality | null; justification: string }) => {
+    (id: string, payload: ItemResponse) => {
       if (!clientId) return;
       const t = debounceTimers.current.get(id);
       if (t) clearTimeout(t);
@@ -95,6 +94,8 @@ export function useChecklistStore(clientId: string | null) {
             answer: payload.answer,
             quality: payload.quality,
             justification: payload.justification || null,
+            validity_date: payload.validity_date,
+            validity_indeterminate: payload.validity_indeterminate,
           },
           { onConflict: "client_id,item_id" },
         );
@@ -109,7 +110,7 @@ export function useChecklistStore(clientId: string | null) {
       setResponses((prev) => {
         const cur = prev[id] ?? EMPTY_RESPONSE;
         const quality = value === "sim" ? cur.quality ?? "bom" : cur.quality;
-        const next = { ...cur, answer: value, quality };
+        const next: ItemResponse = { ...cur, answer: value, quality };
         persist(id, next);
         return { ...prev, [id]: next };
       });
@@ -121,7 +122,7 @@ export function useChecklistStore(clientId: string | null) {
     (id: string, quality: Quality) => {
       setResponses((prev) => {
         const cur = prev[id] ?? EMPTY_RESPONSE;
-        const next = { ...cur, quality };
+        const next: ItemResponse = { ...cur, quality };
         persist(id, next);
         return { ...prev, [id]: next };
       });
@@ -133,7 +134,23 @@ export function useChecklistStore(clientId: string | null) {
     (id: string, justification: string) => {
       setResponses((prev) => {
         const cur = prev[id] ?? EMPTY_RESPONSE;
-        const next = { ...cur, justification };
+        const next: ItemResponse = { ...cur, justification };
+        persist(id, next);
+        return { ...prev, [id]: next };
+      });
+    },
+    [persist],
+  );
+
+  const setValidity = useCallback(
+    (id: string, validity: { date: string | null; indeterminate: boolean }) => {
+      setResponses((prev) => {
+        const cur = prev[id] ?? EMPTY_RESPONSE;
+        const next: ItemResponse = {
+          ...cur,
+          validity_date: validity.indeterminate ? null : validity.date,
+          validity_indeterminate: validity.indeterminate,
+        };
         persist(id, next);
         return { ...prev, [id]: next };
       });
@@ -158,5 +175,5 @@ export function useChecklistStore(clientId: string | null) {
     [clientId],
   );
 
-  return { answers: responses, setAnswer, setQuality, setJustification, reset, loaded };
+  return { answers: responses, setAnswer, setQuality, setJustification, setValidity, reset, loaded };
 }

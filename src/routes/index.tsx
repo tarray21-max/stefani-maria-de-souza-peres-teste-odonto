@@ -130,7 +130,7 @@ function EmptyState() {
 
 function ClientWorkspace({ clientId }: { clientId: string }) {
   const { current } = useClients();
-  const { answers, setAnswer, setQuality, setJustification, reset, loaded } = useChecklistStore(clientId);
+  const { answers, setAnswer, setQuality, setJustification, setValidity, reset, loaded } = useChecklistStore(clientId);
   const { items, refresh: refreshItems, imageUrlsFor, positions, reorderCategory } = useItems(clientId);
   const { prefs, saveLabels, saveOrder } = useUiPrefs(clientId);
   const labels = prefs.tab_labels;
@@ -168,6 +168,7 @@ function ClientWorkspace({ clientId }: { clientId: string }) {
         setAnswer={setAnswer}
         setQuality={setQuality}
         setJustification={setJustification}
+        setValidity={setValidity}
         refreshItems={refreshItems}
         imageUrlsFor={imageUrlsFor}
         positions={positions}
@@ -221,6 +222,7 @@ function TabsWithRename(props: {
   setAnswer: ReturnType<typeof useChecklistStore>["setAnswer"];
   setQuality: ReturnType<typeof useChecklistStore>["setQuality"];
   setJustification: ReturnType<typeof useChecklistStore>["setJustification"];
+  setValidity: ReturnType<typeof useChecklistStore>["setValidity"];
   refreshItems: ReturnType<typeof useItems>["refresh"];
   imageUrlsFor: ReturnType<typeof useItems>["imageUrlsFor"];
   positions: ReturnType<typeof useItems>["positions"];
@@ -233,7 +235,7 @@ function TabsWithRename(props: {
   dashboardCategoryOrder: Category[];
   dashboardLabels: Partial<Record<Category, string>>;
 }) {
-  const { clientId, answers, items, current, setAnswer, setQuality, setJustification, refreshItems, imageUrlsFor, positions, reorderCategory, label, labels, saveLabels, order, saveOrder, dashboardCategoryOrder, dashboardLabels } = props;
+  const { clientId, answers, items, current, setAnswer, setQuality, setJustification, setValidity, refreshItems, imageUrlsFor, positions, reorderCategory, label, labels, saveLabels, order, saveOrder, dashboardCategoryOrder, dashboardLabels } = props;
   const [renameOpen, setRenameOpen] = useState(false);
   const [draft, setDraft] = useState<Record<string, string>>({});
 
@@ -291,13 +293,13 @@ function TabsWithRename(props: {
       {CATEGORIES.map((c) => (
         <TabsContent key={c.id} value={c.id} className="mt-5">
           <SectionHeader title={label(c.id)} subtitle={`${items.filter((i) => i.category === c.id).length} requisitos neste grupo.`} />
-          <ChecklistSection category={c.id} items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} positions={positions} reorderCategory={reorderCategory} />
+          <ChecklistSection category={c.id} items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} setValidity={setValidity} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} positions={positions} reorderCategory={reorderCategory} />
         </TabsContent>
       ))}
 
       <TabsContent value="tcle_pop" className="mt-5">
         <SectionHeader title={label("tcle_pop")} subtitle="Indique se cada serviço prestado possui TCLE e POP correspondentes." />
-        <ChecklistSection category="tcle_pop" items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} positions={positions} reorderCategory={reorderCategory} />
+        <ChecklistSection category="tcle_pop" items={items} answers={answers} setAnswer={setAnswer} setQuality={setQuality} setJustification={setJustification} setValidity={setValidity} clientId={clientId} onItemsChange={refreshItems} imageUrlsFor={imageUrlsFor} positions={positions} reorderCategory={reorderCategory} />
         <ServiceMatrix answers={answers} setAnswer={setAnswer} clientId={clientId} />
       </TabsContent>
 
