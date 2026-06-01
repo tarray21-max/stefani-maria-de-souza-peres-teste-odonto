@@ -715,3 +715,88 @@ function ItemFormDialog({ open, onClose, category, clientId, item, onSaved }: {
     </Dialog>
   );
 }
+
+function ValidityControl({ value, onChange, readOnly }: {
+  value: { date: string | null; indeterminate: boolean };
+  onChange: (v: { date: string | null; indeterminate: boolean }) => void;
+  readOnly?: boolean;
+}) {
+  const { status, days } = getValidityStatus({ validity_date: value.date, validity_indeterminate: value.indeterminate });
+  const [open, setOpen] = useState(false);
+  const [draftDate, setDraftDate] = useState(value.date ?? "");
+  const [draftInd, setDraftInd] = useState(value.indeterminate);
+
+  useEffect(() => {
+    if (open) {
+      setDraftDate(value.date ?? "");
+      setDraftInd(value.indeterminate);
+    }
+  }, [open, value.date, value.indeterminate]);
+
+  const styles: Record<ValidityStatus, { cls: string; label: string; title: string }> = {
+    none: { cls: "border-dashed border-border text-muted-foreground", label: "Validade", title: "Definir validade" },
+    indeterminate: { cls: "border-border text-foreground bg-muted", label: "∞", title: "Validade indeterminada" },
+    expired: { cls: "border-danger bg-danger text-white", label: days != null ? `Vencido ${Math.abs(days)}d` : "Vencido", title: "Vencido" },
+    d15: { cls: "border-danger text-danger bg-danger/10", label: `${days}d`, title: "Vence em até 15 dias" },
+    d30: { cls: "border-amber-500 text-amber-700 dark:text-amber-400 bg-amber-500/10", label: `${days}d`, title: "Vence em até 30 dias" },
+    d60: { cls: "border-warning text-warning bg-warning/10", label: `${days}d`, title: "Vence em até 60 dias" },
+    ok: { cls: "border-success/40 text-success bg-success/5", label: value.date ? formatBR(value.date) : "OK", title: "Em dia" },
+  };
+  const s = styles[status];
+
+  const apply = () => {
+    if (draftInd) onChange({ date: null, indeterminate: true });
+    else onChange({ date: draftDate || null, indeterminate: false });
+    setOpen(false);
+  };
+  const clear = () => {
+    onChange({ date: null, indeterminate: false });
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={readOnly ? undefined : setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          title={s.title}
+          disabled={readOnly}
+          className={cn(
+            "flex-shrink-0 inline-flex items-center gap-1 h-6 px-1.5 rounded border text-[10px] font-semibold transition-colors",
+            s.cls,
+          )}
+        >
+          {status === "indeterminate" ? <InfinityIcon className="w-3 h-3" /> : <CalendarClock className="w-3 h-3" />}
+          <span className="whitespace-nowrap">{s.label}</span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64 p-3 space-y-3">
+        <div className="text-xs font-semibold text-foreground">Validade do documento</div>
+        <div className="space-y-1.5">
+          <Label className="text-[11px] text-muted-foreground">Data de validade</Label>
+          <Input
+            type="date"
+            value={draftDate}
+            onChange={(e) => { setDraftDate(e.target.value); if (e.target.value) setDraftInd(false); }}
+            disabled={draftInd}
+            className="h-8 text-xs"
+          />
+        </div>
+        <label className="flex items-center gap-2 text-xs cursor-pointer">
+          <Checkbox checked={draftInd} onCheckedChange={(c) => { setDraftInd(!!c); if (c) setDraftDate(""); }} />
+          <span>Indeterminado (sem validade)</span>
+        </label>
+        <div className="flex items-center justify-between gap-2 pt-1">
+          <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={clear}>Limpar</Button>
+          <Button type="button" size="sm" className="h-7 text-xs" onClick={apply}>Salvar</Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function formatBR(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  if (!y || !m || !d) return iso;
+  return `${d}/${m}/${y.slice(2)}`;
+}
