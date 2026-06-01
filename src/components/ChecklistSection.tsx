@@ -36,6 +36,7 @@ interface Props {
   setAnswer: (id: string, value: Answer) => void;
   setQuality?: (id: string, quality: Quality) => void;
   setJustification?: (id: string, value: string) => void;
+  setValidity?: (id: string, validity: { date: string | null; indeterminate: boolean }) => void;
   clientId: string | null;
   onItemsChange?: () => void;
   imageUrlsFor?: (itemId: string) => ImageEntry[];
