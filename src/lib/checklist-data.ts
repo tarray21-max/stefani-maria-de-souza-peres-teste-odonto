@@ -271,9 +271,36 @@ export interface ItemResponse {
   answer: Answer;
   quality: Quality;
   justification: string;
+  validity_date: string | null;
+  validity_indeterminate: boolean;
 }
 
-export const EMPTY_RESPONSE: ItemResponse = { answer: null, quality: null, justification: "" };
+export const EMPTY_RESPONSE: ItemResponse = {
+  answer: null,
+  quality: null,
+  justification: "",
+  validity_date: null,
+  validity_indeterminate: false,
+};
+
+export type ValidityStatus = "none" | "indeterminate" | "expired" | "d15" | "d30" | "d60" | "ok";
+
+export function getValidityStatus(
+  r: Pick<ItemResponse, "validity_date" | "validity_indeterminate"> | undefined | null,
+  today: Date = new Date(),
+): { status: ValidityStatus; days: number | null } {
+  if (!r) return { status: "none", days: null };
+  if (r.validity_indeterminate) return { status: "indeterminate", days: null };
+  if (!r.validity_date) return { status: "none", days: null };
+  const d = new Date(r.validity_date + "T00:00:00");
+  const t = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const days = Math.round((d.getTime() - t.getTime()) / 86400000);
+  if (days < 0) return { status: "expired", days };
+  if (days <= 15) return { status: "d15", days };
+  if (days <= 30) return { status: "d30", days };
+  if (days <= 60) return { status: "d60", days };
+  return { status: "ok", days };
+}
 
 export type ResponseMap = Record<string, ItemResponse>;
 
