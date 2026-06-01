@@ -157,6 +157,7 @@ function ClientWorkspace({ clientId }: { clientId: string }) {
         </div>
         <div className="flex items-center gap-2">
           <VisitorLinks clientId={clientId} />
+          <FinalReportButton client={current ?? null} answers={answers} items={items} categoryLabels={dashboardLabels} />
           <ResetButton onConfirm={(j) => reset(j)} />
         </div>
       </div>
