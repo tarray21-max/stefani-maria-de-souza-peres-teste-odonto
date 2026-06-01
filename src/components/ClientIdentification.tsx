@@ -74,16 +74,18 @@ export function ClientIdentification() {
     const areas = (draft.areas && draft.areas.length > 0 ? draft.areas : (draft.area ? [draft.area] : [])) as AreaAtuacao[];
     if (areas.length === 0) return toast.error("Selecione ao menos uma categoria");
     setBusy(true);
-    const tipo = (PRESET_VALUES.has(draft.tipo_contrato ?? "") ? draft.tipo_contrato : "assessoria_odontologica") as "assessoria_odontologica" | "regularizacao_sanitaria";
+    const tipo = (PRESET_VALUES.has(draft.tipo_contrato ?? "") ? draft.tipo_contrato : "assessoria_odontologica") as "assessoria_odontologica" | "assessoria_medica" | "regularizacao_sanitaria";
     // `area` column only accepts the legacy enum (odontologia | medicina); pick a compatible primary
     const legacyArea = (areas.find((a) => a === "odontologia" || a === "medicina") ?? "odontologia") as "odontologia" | "medicina";
+    const especialidades = (draft.especialidades ?? []).map((s) => s.trim()).filter(Boolean);
     const payload = {
       nome: draft.nome,
       cnpj: draft.cnpj ?? null,
       profissional_responsavel: draft.profissional_responsavel ?? null,
       area: legacyArea,
       areas,
-      especialidade: draft.especialidade ?? null,
+      especialidade: especialidades[0] ?? draft.especialidade ?? null,
+      especialidades,
       endereco: draft.endereco ?? null,
       telefone: draft.telefone ?? null,
       tipo_contrato: tipo,
