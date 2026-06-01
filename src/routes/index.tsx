@@ -235,7 +235,7 @@ function TabsWithRename(props: {
   dashboardCategoryOrder: Category[];
   dashboardLabels: Partial<Record<Category, string>>;
 }) {
-  const { clientId, answers, items, current, setAnswer, setQuality, setJustification, refreshItems, imageUrlsFor, positions, reorderCategory, label, labels, saveLabels, order, saveOrder, dashboardCategoryOrder, dashboardLabels } = props;
+  const { clientId, answers, items, current, setAnswer, setQuality, setJustification, setValidity, refreshItems, imageUrlsFor, positions, reorderCategory, label, labels, saveLabels, order, saveOrder, dashboardCategoryOrder, dashboardLabels } = props;
   const [renameOpen, setRenameOpen] = useState(false);
   const [draft, setDraft] = useState<Record<string, string>>({});
 
