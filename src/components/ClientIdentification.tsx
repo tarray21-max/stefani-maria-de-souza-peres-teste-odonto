@@ -54,7 +54,7 @@ export function ClientIdentification() {
   const [draft, setDraft] = useState<Partial<ClientRow>>(() => current ?? { area: "odontologia", areas: ["odontologia"], tipo_contrato: "assessoria_odontologica", contract_type_label: null });
 
   const startNew = () => {
-    setDraft({ area: "odontologia", areas: ["odontologia"], tipo_contrato: "assessoria_odontologica", contract_type_label: null, nome: "" });
+    setDraft({ area: "odontologia", areas: ["odontologia"], especialidades: [], tipo_contrato: "assessoria_odontologica", contract_type_label: null, nome: "" });
     setEditing(true);
   };
   const startEdit = () => {
