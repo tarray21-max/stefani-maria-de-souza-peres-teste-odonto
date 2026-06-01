@@ -433,6 +433,14 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
                               </button>
                             )}
 
+                            {setValidity && (
+                              <ValidityControl
+                                value={{ date: resp?.validity_date ?? null, indeterminate: resp?.validity_indeterminate ?? false }}
+                                onChange={(v) => setValidity(item.id, v)}
+                                readOnly={readOnly}
+                              />
+                            )}
+
                             {setJustification && (
                               <button type="button" title="Justificativa" onClick={() => setOpenId(isOpen ? null : item.id)}
                                 className={cn("flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary", isOpen && "bg-primary text-white", resp?.justification && !isOpen && "text-primary")}>
