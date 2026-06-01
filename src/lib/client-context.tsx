@@ -15,8 +15,9 @@ export interface ClientRow {
   especialidade: string | null;
   endereco: string | null;
   telefone: string | null;
-  tipo_contrato: "assessoria_odontologica" | "regularizacao_sanitaria";
+  tipo_contrato: "assessoria_odontologica" | "assessoria_medica" | "regularizacao_sanitaria";
   contract_type_label: string | null;
+  especialidades: string[];
 }
 
 interface ClientCtx {
