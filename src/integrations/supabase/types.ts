@@ -193,6 +193,7 @@ export type Database = {
           created_at: string
           endereco: string | null
           especialidade: string | null
+          especialidades: string[]
           id: string
           nome: string
           owner_id: string
@@ -209,6 +210,7 @@ export type Database = {
           created_at?: string
           endereco?: string | null
           especialidade?: string | null
+          especialidades?: string[]
           id?: string
           nome: string
           owner_id: string
@@ -225,6 +227,7 @@ export type Database = {
           created_at?: string
           endereco?: string | null
           especialidade?: string | null
+          especialidades?: string[]
           id?: string
           nome?: string
           owner_id?: string
@@ -692,7 +695,10 @@ export type Database = {
       area_atuacao: "odontologia" | "medicina"
       member_role: "owner" | "editor" | "viewer"
       quality_value: "bom" | "ruim"
-      tipo_contrato: "assessoria_odontologica" | "regularizacao_sanitaria"
+      tipo_contrato:
+        | "assessoria_odontologica"
+        | "regularizacao_sanitaria"
+        | "assessoria_medica"
       visitor_mode: "view" | "edit"
     }
     CompositeTypes: {
@@ -825,7 +831,11 @@ export const Constants = {
       area_atuacao: ["odontologia", "medicina"],
       member_role: ["owner", "editor", "viewer"],
       quality_value: ["bom", "ruim"],
-      tipo_contrato: ["assessoria_odontologica", "regularizacao_sanitaria"],
+      tipo_contrato: [
+        "assessoria_odontologica",
+        "regularizacao_sanitaria",
+        "assessoria_medica",
+      ],
       visitor_mode: ["view", "edit"],
     },
   },
