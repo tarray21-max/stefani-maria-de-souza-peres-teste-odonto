@@ -51,7 +51,7 @@ const OPTIONS: { value: Exclude<Answer, null>; label: string; icon: typeof Check
   { value: "na", label: "N/A", icon: MinusCircle, activeClass: "bg-muted-foreground text-white border-muted-foreground" },
 ];
 
-export function ChecklistSection({ category, items: allItems, answers, setAnswer, setQuality, setJustification, clientId, onItemsChange, imageUrlsFor, positions, reorderCategory, readOnly }: Props) {
+export function ChecklistSection({ category, items: allItems, answers, setAnswer, setQuality, setJustification, setValidity, clientId, onItemsChange, imageUrlsFor, positions, reorderCategory, readOnly }: Props) {
   const [renameBlockId, setRenameBlockId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [deleteBlockId, setDeleteBlockId] = useState<string | null>(null);
