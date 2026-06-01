@@ -529,6 +529,8 @@ export type Database = {
           quality: Database["public"]["Enums"]["quality_value"] | null
           updated_at: string
           updated_by: string | null
+          validity_date: string | null
+          validity_indeterminate: boolean
         }
         Insert: {
           answer?: Database["public"]["Enums"]["answer_value"] | null
@@ -540,6 +542,8 @@ export type Database = {
           quality?: Database["public"]["Enums"]["quality_value"] | null
           updated_at?: string
           updated_by?: string | null
+          validity_date?: string | null
+          validity_indeterminate?: boolean
         }
         Update: {
           answer?: Database["public"]["Enums"]["answer_value"] | null
@@ -551,6 +555,8 @@ export type Database = {
           quality?: Database["public"]["Enums"]["quality_value"] | null
           updated_at?: string
           updated_by?: string | null
+          validity_date?: string | null
+          validity_indeterminate?: boolean
         }
         Relationships: [
           {
