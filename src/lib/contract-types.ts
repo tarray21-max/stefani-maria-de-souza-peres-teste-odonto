@@ -9,6 +9,7 @@ export interface ContractType {
 
 export const PRESET_CONTRACT_TYPES: { value: string; label: string }[] = [
   { value: "assessoria_odontologica", label: "Assessoria Odontológica" },
+  { value: "assessoria_medica", label: "Assessoria Médica" },
   { value: "regularizacao_sanitaria", label: "Regularização Sanitária" },
 ];
 
