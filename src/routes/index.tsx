@@ -222,6 +222,7 @@ function TabsWithRename(props: {
   setAnswer: ReturnType<typeof useChecklistStore>["setAnswer"];
   setQuality: ReturnType<typeof useChecklistStore>["setQuality"];
   setJustification: ReturnType<typeof useChecklistStore>["setJustification"];
+  setValidity: ReturnType<typeof useChecklistStore>["setValidity"];
   refreshItems: ReturnType<typeof useItems>["refresh"];
   imageUrlsFor: ReturnType<typeof useItems>["imageUrlsFor"];
   positions: ReturnType<typeof useItems>["positions"];
