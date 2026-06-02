@@ -333,9 +333,10 @@ export function computeMaturity(
       nao++;
     } else if (r.answer === "na") {
       na++;
+      simEffective += 1;
     }
   }
-  const applicable = items.length - na;
+  const applicable = items.length;
   const score = applicable > 0 ? (simEffective / applicable) * 100 : 0;
   return { score, totalSim: sim, totalNao: nao, totalNa: na, totalApplicable: applicable, totalItems: items.length };
 }
