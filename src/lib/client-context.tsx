@@ -14,6 +14,14 @@ export interface ClientRow {
   areas: AreaAtuacao[];
   especialidade: string | null;
   endereco: string | null;
+  cep: string | null;
+  logradouro: string | null;
+  numero: string | null;
+  complemento: string | null;
+  bairro: string | null;
+  cidade: string | null;
+  estado: string | null;
+  redes_sociais: string | null;
   telefone: string | null;
   tipo_contrato: "assessoria_odontologica" | "assessoria_medica" | "regularizacao_sanitaria";
   contract_type_label: string | null;
