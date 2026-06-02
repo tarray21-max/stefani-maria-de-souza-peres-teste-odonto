@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
-  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
+  SidebarMenu, SidebarMenuAction, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -127,36 +127,36 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
                 const isActive = current?.id === c.id;
                 return (
                   <SidebarMenuItem key={c.id}>
-                    <SidebarMenuButton isActive={isActive} onClick={() => setCurrentId(c.id)} className="group/item">
+                    <SidebarMenuButton isActive={isActive} onClick={() => setCurrentId(c.id)} className="pr-14">
                       <Building2 className="w-4 h-4 flex-shrink-0" />
                       {!collapsed && (
-                        <>
-                          <span className="truncate flex-1">{c.nome}</span>
-                          <span className="opacity-0 group-hover/item:opacity-100 flex gap-0.5 transition-opacity">
-                            <button type="button" title="Editar" onClick={(e) => { e.stopPropagation(); startEdit(c); }} className="p-0.5 hover:text-primary">
-                              <Pencil className="w-3 h-3" />
-                            </button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <button type="button" title="Excluir" onClick={(e) => e.stopPropagation()} className="p-0.5 hover:text-destructive">
-                                  <Trash2 className="w-3 h-3" />
-                                </button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Excluir {c.nome}?</AlertDialogTitle>
-                                  <AlertDialogDescription>Esta ação remove definitivamente todos os dados, respostas e snapshots desta clínica.</AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => remove(c)}>Excluir</AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </span>
-                        </>
+                        <span className="truncate flex-1">{c.nome}</span>
                       )}
                     </SidebarMenuButton>
+                    {!collapsed && (
+                      <>
+                        <SidebarMenuAction showOnHover title="Editar" onClick={(e) => { e.stopPropagation(); startEdit(c); }} className="right-7 hover:text-primary">
+                          <Pencil className="w-3 h-3" />
+                        </SidebarMenuAction>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <SidebarMenuAction showOnHover title="Excluir" onClick={(e) => e.stopPropagation()} className="hover:text-destructive">
+                              <Trash2 className="w-3 h-3" />
+                            </SidebarMenuAction>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir {c.nome}?</AlertDialogTitle>
+                              <AlertDialogDescription>Esta ação remove definitivamente todos os dados, respostas e snapshots desta clínica.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => remove(c)}>Excluir</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </>
+                    )}
                   </SidebarMenuItem>
                 );
               })}
