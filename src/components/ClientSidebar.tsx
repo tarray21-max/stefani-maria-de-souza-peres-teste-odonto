@@ -244,9 +244,23 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="md:col-span-2 border-t border-border/60 pt-3 mt-1">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Endereço completo</Label>
+              </div>
+              <div><Label>CEP</Label><Input value={editing.cep ?? ""} onChange={(e) => setEditing({ ...editing, cep: e.target.value })} /></div>
+              <div><Label>Estado (UF)</Label><Input maxLength={2} value={editing.estado ?? ""} onChange={(e) => setEditing({ ...editing, estado: e.target.value.toUpperCase() })} /></div>
+              <div className="md:col-span-2"><Label>Logradouro</Label><Input value={editing.logradouro ?? ""} onChange={(e) => setEditing({ ...editing, logradouro: e.target.value })} /></div>
+              <div><Label>Número</Label><Input value={editing.numero ?? ""} onChange={(e) => setEditing({ ...editing, numero: e.target.value })} /></div>
+              <div><Label>Complemento</Label><Input value={editing.complemento ?? ""} onChange={(e) => setEditing({ ...editing, complemento: e.target.value })} /></div>
+              <div><Label>Bairro</Label><Input value={editing.bairro ?? ""} onChange={(e) => setEditing({ ...editing, bairro: e.target.value })} /></div>
+              <div><Label>Cidade</Label><Input value={editing.cidade ?? ""} onChange={(e) => setEditing({ ...editing, cidade: e.target.value })} /></div>
               <div className="md:col-span-2">
-                <Label>Endereço</Label>
+                <Label>Endereço (observações adicionais)</Label>
                 <Textarea rows={2} value={editing.endereco ?? ""} onChange={(e) => setEditing({ ...editing, endereco: e.target.value })} />
+              </div>
+              <div className="md:col-span-2">
+                <Label>Redes sociais</Label>
+                <Textarea rows={2} placeholder="Instagram, Facebook, site, etc." value={editing.redes_sociais ?? ""} onChange={(e) => setEditing({ ...editing, redes_sociais: e.target.value })} />
               </div>
             </div>
           )}
