@@ -188,16 +188,24 @@ export type Database = {
         Row: {
           area: Database["public"]["Enums"]["area_atuacao"]
           areas: string[]
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
           cnpj: string | null
+          complemento: string | null
           contract_type_label: string | null
           created_at: string
           endereco: string | null
           especialidade: string | null
           especialidades: string[]
+          estado: string | null
           id: string
+          logradouro: string | null
           nome: string
+          numero: string | null
           owner_id: string
           profissional_responsavel: string | null
+          redes_sociais: string | null
           telefone: string | null
           tipo_contrato: Database["public"]["Enums"]["tipo_contrato"]
           updated_at: string
@@ -205,16 +213,24 @@ export type Database = {
         Insert: {
           area?: Database["public"]["Enums"]["area_atuacao"]
           areas?: string[]
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
           cnpj?: string | null
+          complemento?: string | null
           contract_type_label?: string | null
           created_at?: string
           endereco?: string | null
           especialidade?: string | null
           especialidades?: string[]
+          estado?: string | null
           id?: string
+          logradouro?: string | null
           nome: string
+          numero?: string | null
           owner_id: string
           profissional_responsavel?: string | null
+          redes_sociais?: string | null
           telefone?: string | null
           tipo_contrato?: Database["public"]["Enums"]["tipo_contrato"]
           updated_at?: string
@@ -222,16 +238,24 @@ export type Database = {
         Update: {
           area?: Database["public"]["Enums"]["area_atuacao"]
           areas?: string[]
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
           cnpj?: string | null
+          complemento?: string | null
           contract_type_label?: string | null
           created_at?: string
           endereco?: string | null
           especialidade?: string | null
           especialidades?: string[]
+          estado?: string | null
           id?: string
+          logradouro?: string | null
           nome?: string
+          numero?: string | null
           owner_id?: string
           profissional_responsavel?: string | null
+          redes_sociais?: string | null
           telefone?: string | null
           tipo_contrato?: Database["public"]["Enums"]["tipo_contrato"]
           updated_at?: string

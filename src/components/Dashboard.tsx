@@ -4,7 +4,7 @@ import { formatCNPJ, formatPhone } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ToothGauge } from "./ToothGauge";
-import { AlertTriangle, CheckCircle2, MinusCircle, TrendingUp, Building2, User, Hash, MapPin, Phone, Briefcase, Stethoscope, Pencil } from "lucide-react";
+import { AlertTriangle, CheckCircle2, MinusCircle, TrendingUp, Building2, User, Hash, MapPin, Phone, Briefcase, Stethoscope, Pencil, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Props {
@@ -51,6 +51,17 @@ export function Dashboard({ answers, items, client, categoryLabels, categoryOrde
     { label: "Itens totais", value: global.totalItems, icon: TrendingUp, color: "var(--primary)" },
   ];
 
+  const enderecoCompleto = client
+    ? [
+        [client.logradouro, client.numero].filter(Boolean).join(", "),
+        client.complemento,
+        client.bairro,
+        [client.cidade, client.estado].filter(Boolean).join(" / "),
+        client.cep ? `CEP ${client.cep}` : null,
+        client.endereco,
+      ].filter((p) => p && String(p).trim().length > 0).join(" • ")
+    : "";
+
   const clinicaItems = client
     ? [
         { icon: User, label: "Responsável Técnico", value: client.profissional_responsavel },
@@ -58,7 +69,8 @@ export function Dashboard({ answers, items, client, categoryLabels, categoryOrde
         { icon: Hash, label: "CNPJ", value: formatCNPJ(client.cnpj) },
         { icon: Briefcase, label: "Contrato", value: contractLabel(client) },
         { icon: Phone, label: "Telefone", value: formatPhone(client.telefone) },
-        { icon: MapPin, label: "Endereço", value: client.endereco },
+        { icon: Share2, label: "Redes sociais", value: client.redes_sociais },
+        { icon: MapPin, label: "Endereço", value: enderecoCompleto },
       ].filter((i) => i.value && String(i.value).trim().length > 0)
     : [];
 
