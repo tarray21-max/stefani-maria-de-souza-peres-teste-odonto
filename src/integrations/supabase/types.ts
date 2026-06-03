@@ -595,6 +595,7 @@ export type Database = {
       service_matrix_items: {
         Row: {
           area: string
+          categories: string[]
           client_id: string
           created_at: string
           created_by: string | null
@@ -608,6 +609,7 @@ export type Database = {
         }
         Insert: {
           area?: string
+          categories?: string[]
           client_id: string
           created_at?: string
           created_by?: string | null
@@ -621,6 +623,7 @@ export type Database = {
         }
         Update: {
           area?: string
+          categories?: string[]
           client_id?: string
           created_at?: string
           created_by?: string | null

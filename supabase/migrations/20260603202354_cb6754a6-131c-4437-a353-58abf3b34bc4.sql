@@ -1,0 +1,1 @@
+ALTER TABLE public.service_matrix_items ADD COLUMN IF NOT EXISTS categories text[] NOT NULL DEFAULT '{}'::text[];
