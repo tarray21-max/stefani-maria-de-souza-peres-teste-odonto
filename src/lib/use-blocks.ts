@@ -69,14 +69,14 @@ export function useBlocks(clientId: string | null, category: Category, categoryI
   // Realtime: recarrega quando outro membro altera blocos da mesma clínica/categoria
   useEffect(() => {
     if (!clientId) return;
-    const ch = (supabase as any)
-      .channel(`checklist_blocks-${clientId}-${category}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "checklist_blocks", filter: `client_id=eq.${clientId}` },
-        () => { void loadFromDb(); },
-      )
-      .subscribe();
+    const suffix = Math.random().toString(36).slice(2, 8);
+    const ch = (supabase as any).channel(`checklist_blocks-${clientId}-${category}-${suffix}`);
+    ch.on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "checklist_blocks", filter: `client_id=eq.${clientId}` },
+      () => { void loadFromDb(); },
+    );
+    ch.subscribe();
     return () => { (supabase as any).removeChannel(ch); };
   }, [clientId, category, loadFromDb]);
 
