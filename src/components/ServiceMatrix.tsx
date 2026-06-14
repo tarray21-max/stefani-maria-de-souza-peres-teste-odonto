@@ -5,14 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, FileSignature, FileText, Plus, Pencil, Trash2, GripVertical, Tags } from "lucide-react";
+import { ArrowDown, ArrowUp, FileSignature, FileText, FolderInput, FolderPlus, GripVertical, MoreVertical, Pencil, Plus, Search, Tags, Trash2 } from "lucide-react";
 import type { Answer, ResponseMap } from "@/lib/checklist-data";
 import { cn } from "@/lib/utils";
+import { useBlocks, type Block } from "@/lib/use-blocks";
 import {
   serviceAnswerId,
   SERVICE_CATEGORY_LABELS,
@@ -94,11 +96,19 @@ export function ServiceMatrix({ answers, setAnswer, clientId, readOnly }: Props)
   const [q, setQ] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<ServiceCategory | "todas">("todas");
   const [editItem, setEditItem] = useState<ServiceMatrixItem | null>(null);
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState<{ blockId: string | null } | null>(null);
   const [deleteItem, setDeleteItem] = useState<ServiceMatrixItem | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
+  const [renameBlockId, setRenameBlockId] = useState<string | null>(null);
+  const [renameDraft, setRenameDraft] = useState("");
+  const [deleteBlockId, setDeleteBlockId] = useState<string | null>(null);
+
   const { items, addItem, updateItem, deleteItem: removeItem, reorderItems } = useServiceMatrixItems(clientId);
+
+  const allIds = useMemo(() => items.map((i) => i.id), [items]);
+  const { blocks, addBlock, renameBlock, deleteBlock, moveBlock, moveItemToBlock, blockOfItem } =
+    useBlocks(clientId, "tcle_pop", allIds);
 
   const rows = useMemo(() => {
     const normalized = q.trim().toLowerCase();
@@ -131,6 +141,21 @@ export function ServiceMatrix({ answers, setAnswer, clientId, readOnly }: Props)
     }
     return { okT, okP, total: items.length };
   }, [items, answers]);
+
+  const groups = useMemo(() => {
+    const out: { block: Block | null; items: ServiceMatrixItem[] }[] = [];
+    const used = new Set<string>();
+    for (const b of blocks) {
+      const set = new Set(b.itemIds);
+      const its = rows.filter((i) => set.has(i.id));
+      its.forEach((i) => used.add(i.id));
+      out.push({ block: b, items: its });
+    }
+    const leftover = rows.filter((i) => !used.has(i.id));
+    if (blocks.length === 0) out.push({ block: null, items: leftover });
+    else if (leftover.length) out.push({ block: null, items: leftover });
+    return out;
+  }, [blocks, rows]);
 
   const handleDrop = async (targetId: string) => {
     if (!dragId || dragId === targetId) { setDragId(null); setOverId(null); return; }
@@ -175,7 +200,14 @@ export function ServiceMatrix({ answers, setAnswer, clientId, readOnly }: Props)
         <div className="flex items-center gap-3 text-xs flex-wrap justify-end">
           <span className="inline-flex items-center gap-1.5"><FileSignature className="w-3.5 h-3.5 text-primary" /><strong className="text-foreground">{totals.okT}</strong><span className="text-muted-foreground">/ {totals.total} TCLE</span></span>
           <span className="inline-flex items-center gap-1.5"><FileText className="w-3.5 h-3.5 text-primary" /><strong className="text-foreground">{totals.okP}</strong><span className="text-muted-foreground">/ {totals.total} POP</span></span>
-          {!readOnly && clientId && <Button size="sm" className="h-8" onClick={() => setCreating(true)}><Plus className="w-3.5 h-3.5 mr-1" /> Novo procedimento</Button>}
+          {!readOnly && clientId && (
+            <>
+              <Button size="sm" variant="outline" className="h-8" onClick={() => addBlock(`Bloco ${blocks.length + 1}`)} title="Criar novo bloco">
+                <FolderPlus className="w-3.5 h-3.5 mr-1" /> Novo bloco
+              </Button>
+              <Button size="sm" className="h-8" onClick={() => setCreating({ blockId: null })}><Plus className="w-3.5 h-3.5 mr-1" /> Novo procedimento</Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -195,63 +227,186 @@ export function ServiceMatrix({ answers, setAnswer, clientId, readOnly }: Props)
         </Select>
       </div>
 
-      <div className="rounded-md border border-border/60 overflow-hidden">
-        <div className="grid grid-cols-[28px_1fr_auto_auto] gap-0 text-[11px] uppercase tracking-wider text-muted-foreground bg-muted/50 px-3 py-2">
-          <div />
-          <div>Serviço</div>
-          <div className="px-3 text-center min-w-[150px]">TCLE</div>
-          <div className="px-3 text-center min-w-[150px]">POP</div>
-        </div>
-        <div className="divide-y divide-border/60 max-h-[520px] overflow-auto">
-          {rows.map((s) => {
-            const idT = serviceAnswerId("tcle", s);
-            const idP = serviceAnswerId("pop", s);
-            const aT = answers[idT]?.answer ?? null;
-            const aP = answers[idP]?.answer ?? null;
-            const dim = aT === "na" && aP === "na";
-            const isOver = overId === s.id && dragId && dragId !== s.id;
-            const catTitle = (s.categories ?? []).length
-              ? (s.categories ?? []).map((c) => SERVICE_CATEGORY_LABELS[c]).join(", ")
-              : "Sem categoria definida";
-            return (
-              <div
-                key={s.id}
-                onDragEnter={(e) => { if (!readOnly) { e.preventDefault(); if (dragId && dragId !== s.id) setOverId(s.id); } }}
-                onDragOver={(e) => { if (!readOnly && dragId) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; } }}
-                onDragLeave={() => { if (overId === s.id) setOverId(null); }}
-                onDrop={(e) => { if (!readOnly) { e.preventDefault(); handleDrop(s.id); } }}
-                onDragEnd={() => { setDragId(null); setOverId(null); }}
-                className={cn("grid grid-cols-[28px_1fr_auto_auto] items-center px-3 py-1.5 transition-all", dim && "opacity-40", isOver && "bg-primary/10 outline outline-1 outline-primary/40")}
-              >
-                <span
-                  title="Arrastar para reordenar"
-                  draggable={!readOnly}
-                  onDragStart={(e) => { setDragId(s.id); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", s.id); }}
-                  className="w-6 h-7 inline-flex items-center justify-center text-muted-foreground hover:text-primary cursor-grab active:cursor-grabbing"
-                >
-                  <GripVertical className="w-3.5 h-3.5" />
-                </span>
-                <div className="flex items-center gap-2 min-w-0 pr-3">
-                  {!readOnly && clientId && (
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      <button type="button" onClick={() => setEditItem(s)} title="Editar procedimento" className="w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-primary/10"><Pencil className="w-3.5 h-3.5" /></button>
-                      <button type="button" onClick={() => setDeleteItem(s)} title="Excluir procedimento" className="w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-danger hover:bg-danger/10"><Trash2 className="w-3.5 h-3.5" /></button>
-                      <CategoriesPopover item={s} />
-                    </div>
+      <div className="space-y-4">
+        {groups.map((g, gi) => {
+          const isLeftover = !g.block;
+          return (
+            <div key={g.block?.id ?? `__leftover_${gi}`} className="rounded-lg border border-border/60 bg-card overflow-hidden">
+              {(g.block || !readOnly) && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 border-b border-border/60">
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{isLeftover ? "Sem bloco" : "Bloco"}</span>
+                  <span className="font-semibold text-sm text-foreground flex-1 truncate">
+                    {isLeftover ? "Demais procedimentos" : g.block!.name}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">{g.items.length} itens</span>
+                  {g.block && !readOnly && (
+                    <>
+                      <button type="button" title="Mover bloco para cima" onClick={() => moveBlock(g.block!.id, -1)} disabled={gi === 0}
+                        className="w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-primary/10 disabled:opacity-40 disabled:hover:bg-transparent">
+                        <ArrowUp className="w-3 h-3" />
+                      </button>
+                      <button type="button" title="Mover bloco para baixo" onClick={() => moveBlock(g.block!.id, 1)} disabled={gi >= blocks.length - 1}
+                        className="w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-primary/10 disabled:opacity-40 disabled:hover:bg-transparent">
+                        <ArrowDown className="w-3 h-3" />
+                      </button>
+                      <button type="button" title="Renomear bloco" onClick={() => { setRenameBlockId(g.block!.id); setRenameDraft(g.block!.name); }}
+                        className="w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-primary/10">
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                      <button type="button" title="Excluir bloco (mantém os procedimentos)" onClick={() => setDeleteBlockId(g.block!.id)}
+                        className="w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-danger hover:bg-danger/10">
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </>
                   )}
-                  <span className="text-sm text-foreground truncate" title={`${s.name}\n\nCategorias: ${catTitle}`}>{s.name}</span>
+                  {!readOnly && clientId && (
+                    <Button size="sm" variant="outline" className="h-7 ml-1" onClick={() => setCreating({ blockId: g.block ? g.block.id : null })}
+                      title={g.block ? `Adicionar procedimento em "${g.block.name}"` : "Adicionar procedimento"}>
+                      <Plus className="w-3 h-3 mr-1" /> Novo
+                    </Button>
+                  )}
                 </div>
-                <div className="px-3 text-center"><Cell current={aT} onChange={(v) => setAnswer(idT, v)} readOnly={readOnly} /></div>
-                <div className="px-3 text-center"><Cell current={aP} onChange={(v) => setAnswer(idP, v)} readOnly={readOnly} /></div>
+              )}
+              <div className="grid grid-cols-[1fr_auto_auto] gap-0 text-[11px] uppercase tracking-wider text-muted-foreground bg-muted/30 px-3 py-1.5 border-b border-border/60">
+                <div>Serviço</div>
+                <div className="px-3 text-center min-w-[150px]">TCLE</div>
+                <div className="px-3 text-center min-w-[150px]">POP</div>
               </div>
-            );
-          })}
-          {rows.length === 0 && <div className="px-3 py-6 text-sm text-muted-foreground text-center">Nenhum serviço encontrado para "{q}".</div>}
-        </div>
+              <div className="divide-y divide-border/60">
+                {g.items.length === 0 ? (
+                  <div className="px-3 py-4 text-center text-xs text-muted-foreground italic">Nenhum procedimento neste bloco. Use o menu de cada item para movê-lo para cá.</div>
+                ) : g.items.map((s) => {
+                  const idT = serviceAnswerId("tcle", s);
+                  const idP = serviceAnswerId("pop", s);
+                  const aT = answers[idT]?.answer ?? null;
+                  const aP = answers[idP]?.answer ?? null;
+                  const dim = aT === "na" && aP === "na";
+                  const isOver = overId === s.id && dragId && dragId !== s.id;
+                  const catTitle = (s.categories ?? []).length
+                    ? (s.categories ?? []).map((c) => SERVICE_CATEGORY_LABELS[c]).join(", ")
+                    : "Sem categoria definida";
+                  const currentBlock = blockOfItem(s.id);
+                  return (
+                    <div
+                      key={s.id}
+                      onDragEnter={(e) => { if (!readOnly) { e.preventDefault(); if (dragId && dragId !== s.id) setOverId(s.id); } }}
+                      onDragOver={(e) => { if (!readOnly && dragId) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; } }}
+                      onDragLeave={() => { if (overId === s.id) setOverId(null); }}
+                      onDrop={(e) => { if (!readOnly) { e.preventDefault(); handleDrop(s.id); } }}
+                      onDragEnd={() => { setDragId(null); setOverId(null); }}
+                      className={cn("grid grid-cols-[1fr_auto_auto] items-center px-3 py-1.5 transition-all", dim && "opacity-40", isOver && "bg-primary/10 outline outline-1 outline-primary/40")}
+                    >
+                      <div className="flex items-center gap-2 min-w-0 pr-3">
+                        {!readOnly && (
+                          <span
+                            title="Arrastar para reordenar"
+                            draggable={!readOnly}
+                            onDragStart={(e) => { setDragId(s.id); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", s.id); }}
+                            className="w-5 h-6 inline-flex items-center justify-center text-muted-foreground hover:text-primary cursor-grab active:cursor-grabbing flex-shrink-0"
+                          >
+                            <GripVertical className="w-3.5 h-3.5" />
+                          </span>
+                        )}
+                        {!readOnly && clientId && (
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button type="button" title="Ações" className="w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-primary/10">
+                                  <MoreVertical className="w-3.5 h-3.5" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="start" className="w-52">
+                                <DropdownMenuItem onClick={() => setEditItem(s)}>
+                                  <Pencil className="w-3.5 h-3.5 mr-2" /> Editar procedimento
+                                </DropdownMenuItem>
+                                <DropdownMenuSub>
+                                  <DropdownMenuSubTrigger>
+                                    <FolderInput className="w-3.5 h-3.5 mr-2" /> Mover para bloco
+                                  </DropdownMenuSubTrigger>
+                                  <DropdownMenuSubContent>
+                                    <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Blocos</DropdownMenuLabel>
+                                    {blocks.length === 0 && <DropdownMenuItem disabled>Nenhum bloco criado</DropdownMenuItem>}
+                                    {blocks.map((b) => (
+                                      <DropdownMenuItem key={b.id} onClick={() => moveItemToBlock(s.id, b.id)} disabled={currentBlock?.id === b.id}>
+                                        {b.name}{currentBlock?.id === b.id ? " ✓" : ""}
+                                      </DropdownMenuItem>
+                                    ))}
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => moveItemToBlock(s.id, null)} disabled={!currentBlock}>
+                                      Remover do bloco
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => addBlock(`Bloco ${blocks.length + 1}`)}>
+                                      <FolderPlus className="w-3.5 h-3.5 mr-2" /> Novo bloco…
+                                    </DropdownMenuItem>
+                                  </DropdownMenuSubContent>
+                                </DropdownMenuSub>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => setDeleteItem(s)} className="text-danger focus:text-danger">
+                                  <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir procedimento
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                            <CategoriesPopover item={s} />
+                          </div>
+                        )}
+                        <span className="text-sm text-foreground truncate" title={`${s.name}\n\nCategorias: ${catTitle}`}>{s.name}</span>
+                      </div>
+                      <div className="px-3 text-center"><Cell current={aT} onChange={(v) => setAnswer(idT, v)} readOnly={readOnly} /></div>
+                      <div className="px-3 text-center"><Cell current={aP} onChange={(v) => setAnswer(idP, v)} readOnly={readOnly} /></div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+        {rows.length === 0 && <div className="rounded-lg border border-border/60 bg-card px-3 py-6 text-center text-sm text-muted-foreground">Nenhum serviço encontrado{q ? ` para "${q}"` : ""}.</div>}
       </div>
 
-      <ServiceFormDialog open={creating} onClose={() => setCreating(false)} onSave={async (name, categories) => { await addItem(name, categories); setCreating(false); toast.success("Procedimento criado"); }} />
+      <ServiceFormDialog
+        open={!!creating}
+        onClose={() => setCreating(null)}
+        onSave={async (name, categories) => {
+          await addItem(name, categories);
+          const targetBlockId = creating?.blockId ?? null;
+          setCreating(null);
+          // Move the newly created item into the target block. We identify it as the
+          // most recent custom item with the same name (refresh ran inside addItem).
+          if (targetBlockId) {
+            // Defer to next microtask so items list is up-to-date.
+            setTimeout(() => {
+              const created = [...items].reverse().find((i) => !i.isDefault && i.name === name);
+              if (created) moveItemToBlock(created.id, targetBlockId);
+            }, 0);
+          }
+          toast.success("Procedimento criado");
+        }}
+      />
       <ServiceFormDialog open={!!editItem} item={editItem} onClose={() => setEditItem(null)} onSave={async (name, categories) => { if (editItem) await updateItem(editItem, name, categories); setEditItem(null); toast.success("Procedimento salvo"); }} />
+
+      <Dialog open={!!renameBlockId} onOpenChange={(o) => !o && setRenameBlockId(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Renomear bloco</DialogTitle></DialogHeader>
+          <Input value={renameDraft} onChange={(e) => setRenameDraft(e.target.value)} placeholder="Nome do bloco" autoFocus />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRenameBlockId(null)}>Cancelar</Button>
+            <Button onClick={() => { if (renameBlockId && renameDraft.trim()) renameBlock(renameBlockId, renameDraft.trim()); setRenameBlockId(null); }}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteBlockId} onOpenChange={(o) => !o && setDeleteBlockId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir bloco?</AlertDialogTitle>
+            <AlertDialogDescription>O bloco será removido, mas os procedimentos continuam na matriz (em "Demais procedimentos").</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (deleteBlockId) deleteBlock(deleteBlockId); setDeleteBlockId(null); }}>Excluir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!deleteItem} onOpenChange={(o) => !o && setDeleteItem(null)}>
         <AlertDialogContent>
