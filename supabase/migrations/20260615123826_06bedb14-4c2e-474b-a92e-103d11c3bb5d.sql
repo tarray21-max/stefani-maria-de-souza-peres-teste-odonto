@@ -1,0 +1,2 @@
+-- Separar os blocos da matriz "Documentação por procedimento" (TCLE × POP) dos blocos do checklist de perguntas (que também usavam a categoria 'tcle_pop'). Todos os registros existentes em 'tcle_pop' contêm IDs de procedimentos da matriz, então são movidos para 'tcle_pop_matrix'.
+UPDATE public.checklist_blocks SET category = 'tcle_pop_matrix' WHERE category = 'tcle_pop';

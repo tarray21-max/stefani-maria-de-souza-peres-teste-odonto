@@ -108,7 +108,7 @@ export function ServiceMatrix({ answers, setAnswer, clientId, readOnly }: Props)
 
   const allIds = useMemo(() => items.map((i) => i.id), [items]);
   const { blocks, addBlock, renameBlock, deleteBlock, moveBlock, moveItemToBlock, blockOfItem } =
-    useBlocks(clientId, "tcle_pop", allIds);
+    useBlocks(clientId, "tcle_pop_matrix" as unknown as import("@/lib/checklist-data").Category, allIds);
 
   const rows = useMemo(() => {
     const normalized = q.trim().toLowerCase();
