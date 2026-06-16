@@ -23,6 +23,7 @@ import {
   type ServiceMatrixItem,
   useServiceMatrixItems,
 } from "@/lib/use-service-matrix-items";
+import { useCategoryInfo, type CategoryInfo } from "@/lib/use-category-info";
 import { toast } from "sonner";
 
 interface Props {
