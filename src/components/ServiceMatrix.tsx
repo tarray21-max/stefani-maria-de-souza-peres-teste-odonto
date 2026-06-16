@@ -174,8 +174,10 @@ export function ServiceMatrix({ answers, setAnswer, clientId, readOnly }: Props)
   const [renameBlockId, setRenameBlockId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [deleteBlockId, setDeleteBlockId] = useState<string | null>(null);
+  const [infoCategory, setInfoCategory] = useState<ServiceCategory | null>(null);
 
   const { items, addItem, updateItem, deleteItem: removeItem, reorderItems } = useServiceMatrixItems(clientId);
+  const { get: getCategoryInfo, save: saveCategoryInfo } = useCategoryInfo(clientId);
 
   const allIds = useMemo(() => items.map((i) => i.id), [items]);
   const { blocks, addBlock, renameBlock, deleteBlock, moveBlock, moveItemToBlock, blockOfItem } =
