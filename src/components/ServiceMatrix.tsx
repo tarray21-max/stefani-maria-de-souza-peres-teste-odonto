@@ -493,6 +493,14 @@ export function ServiceMatrix({ answers, setAnswer, clientId, readOnly }: Props)
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <CategoryInfoDialog
+        category={infoCategory}
+        onClose={() => setInfoCategory(null)}
+        getInfo={getCategoryInfo}
+        onSave={saveCategoryInfo}
+        readOnly={readOnly}
+      />
     </Card>
   );
 }
