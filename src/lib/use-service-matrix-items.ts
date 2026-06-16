@@ -8,21 +8,23 @@ export type ServiceCategory =
   | "medicos"
   | "cirurgioes_dentistas"
   | "cirurgiao_dentista_hof"
-  | "cirurgiao_dentista_bucomaxilo_ceof"
+  | "cirurgiao_dentista_buco"
+  | "cirurgiao_dentista_ceof"
   | "biomedicos"
-  | "farmaceuticos"
   | "enfermeiros"
+  | "farmaceuticos"
   | "fisioterapeutas";
 
 export const SERVICE_CATEGORY_OPTIONS: { value: ServiceCategory; label: string }[] = [
-  { value: "medicos", label: "Médicos" },
-  { value: "cirurgioes_dentistas", label: "Cirurgiões-dentistas" },
+  { value: "medicos", label: "Médico" },
+  { value: "cirurgioes_dentistas", label: "Cirurgião-dentista" },
   { value: "cirurgiao_dentista_hof", label: "Cirurgião-dentista HOF" },
-  { value: "cirurgiao_dentista_bucomaxilo_ceof", label: "CIRURGIÃO DENTISTA BUCOMAXILO / CIRURGIÃO DENTISTA CEOF" },
-  { value: "biomedicos", label: "Biomédicos" },
-  { value: "farmaceuticos", label: "Farmacêuticos" },
-  { value: "enfermeiros", label: "Enfermeiros" },
-  { value: "fisioterapeutas", label: "Fisioterapeutas" },
+  { value: "cirurgiao_dentista_buco", label: "Cirurgião-dentista BUCO" },
+  { value: "cirurgiao_dentista_ceof", label: "Cirurgião-dentista CEOF" },
+  { value: "biomedicos", label: "Biomédico" },
+  { value: "enfermeiros", label: "Enfermeiro" },
+  { value: "farmaceuticos", label: "Farmacêutico" },
+  { value: "fisioterapeutas", label: "Fisioterapeuta" },
 ];
 
 export const SERVICE_CATEGORY_LABELS: Record<ServiceCategory, string> = Object.fromEntries(

@@ -592,6 +592,44 @@ export type Database = {
           },
         ]
       }
+      service_category_info: {
+        Row: {
+          category: string
+          client_id: string
+          created_at: string
+          id: string
+          norma: string | null
+          observacao: string | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          client_id: string
+          created_at?: string
+          id?: string
+          norma?: string | null
+          observacao?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          norma?: string | null
+          observacao?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_category_info_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_matrix_items: {
         Row: {
           area: string
