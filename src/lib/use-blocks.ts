@@ -44,29 +44,31 @@ export function useBlocks(clientId: string | null, category: Category, categoryI
     return false;
   }, [clientId, category, key]);
 
-  // 1) Carrega do banco; localStorage fica apenas como fallback/migração local.
+  // O banco é a fonte única da verdade. localStorage é apenas cache local
+  // para evitar flicker; nunca é re-promovido a blocos persistidos.
   useEffect(() => {
     if (!key) { setBlocks([]); setHydrated(false); return; }
     let cancelled = false;
     setHydrated(false);
+    purgeLegacyCaches(clientId!, category);
     void (async () => {
-      const ok = await loadFromDb();
-      if (cancelled || ok) return;
-      const raw = typeof window !== "undefined"
-        ? localStorage.getItem(key) ?? legacyStorageKeys(clientId!, category).map((k) => localStorage.getItem(k)).find(Boolean) ?? null
-        : null;
-      if (raw) {
-        try {
-          const next = normalizeBlocks(JSON.parse(raw) as Block[]);
-          setBlocks(next);
-          localStorage.setItem(key, JSON.stringify(next));
-          if (next.length) void (supabase as any).from("checklist_blocks").upsert(next.map((b, position) => ({ id: b.id, client_id: clientId, category, name: b.name, item_ids: b.itemIds, position })), { onConflict: "id" });
-          setHydrated(true);
-          return;
-        } catch { /* ignore */ }
+      const { data, error } = await (supabase as any)
+        .from("checklist_blocks")
+        .select("id,name,item_ids,position")
+        .eq("client_id", clientId)
+        .eq("category", category)
+        .order("position", { ascending: true });
+      if (cancelled) return;
+      if (error) {
+        // Em caso de falha, mantém vazio (não promove cache local a fonte).
+        setBlocks([]);
+        setHydrated(false);
+        return;
       }
-      setBlocks([]);
-      setHydrated(false);
+      const next = ((data ?? []) as BlockRow[]).map((r) => ({ id: r.id, name: r.name, itemIds: r.item_ids ?? [] }));
+      setBlocks(next);
+      localStorage.setItem(key, JSON.stringify(next));
+      setHydrated(true);
     })();
     return () => { cancelled = true; };
   }, [key, clientId, category, loadFromDb]);
