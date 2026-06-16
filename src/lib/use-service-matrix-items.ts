@@ -7,7 +7,8 @@ export type ServiceArea = "medica" | "odontologica" | "ambas";
 export type ServiceCategory =
   | "medicos"
   | "cirurgioes_dentistas"
-  | "cirurgioes_dentistas_especialistas"
+  | "cirurgiao_dentista_hof"
+  | "cirurgiao_dentista_bucomaxilo_ceof"
   | "biomedicos"
   | "farmaceuticos"
   | "enfermeiros"
@@ -16,7 +17,8 @@ export type ServiceCategory =
 export const SERVICE_CATEGORY_OPTIONS: { value: ServiceCategory; label: string }[] = [
   { value: "medicos", label: "Médicos" },
   { value: "cirurgioes_dentistas", label: "Cirurgiões-dentistas" },
-  { value: "cirurgioes_dentistas_especialistas", label: "Cirurgiões-dentistas especialistas" },
+  { value: "cirurgiao_dentista_hof", label: "Cirurgião-dentista HOF" },
+  { value: "cirurgiao_dentista_bucomaxilo_ceof", label: "CIRURGIÃO DENTISTA BUCOMAXILO / CIRURGIÃO DENTISTA CEOF" },
   { value: "biomedicos", label: "Biomédicos" },
   { value: "farmaceuticos", label: "Farmacêuticos" },
   { value: "enfermeiros", label: "Enfermeiros" },
