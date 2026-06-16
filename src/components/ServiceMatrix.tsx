@@ -64,7 +64,7 @@ function Cell({ current, onChange, readOnly }: { current: Answer; onChange: (v: 
   );
 }
 
-function CategoriesPopover({ item }: { item: ServiceMatrixItem }) {
+function CategoriesPopover({ item, onOpenCategory }: { item: ServiceMatrixItem; onOpenCategory: (c: ServiceCategory) => void }) {
   const cats = item.categories ?? [];
   return (
     <Popover>
@@ -84,7 +84,17 @@ function CategoriesPopover({ item }: { item: ServiceMatrixItem }) {
         ) : (
           <div className="flex flex-wrap gap-1.5">
             {cats.map((c) => (
-              <Badge key={c} variant="outline" className="text-xs">{SERVICE_CATEGORY_LABELS[c]}</Badge>
+              <button
+                key={c}
+                type="button"
+                onClick={() => onOpenCategory(c)}
+                title="Ver norma e observação"
+                className="inline-flex"
+              >
+                <Badge variant="outline" className="text-xs cursor-pointer hover:bg-primary/10 hover:border-primary/40">
+                  {SERVICE_CATEGORY_LABELS[c]}
+                </Badge>
+              </button>
             ))}
           </div>
         )}
@@ -92,6 +102,66 @@ function CategoriesPopover({ item }: { item: ServiceMatrixItem }) {
     </Popover>
   );
 }
+
+function CategoryInfoDialog({
+  category,
+  onClose,
+  getInfo,
+  onSave,
+  readOnly,
+}: {
+  category: ServiceCategory | null;
+  onClose: () => void;
+  getInfo: (c: ServiceCategory) => CategoryInfo;
+  onSave: (c: ServiceCategory, info: CategoryInfo) => Promise<void>;
+  readOnly?: boolean;
+}) {
+  const [norma, setNorma] = useState("");
+  const [observacao, setObservacao] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (category) {
+      const info = getInfo(category);
+      setNorma(info.norma);
+      setObservacao(info.observacao);
+      setBusy(false);
+    }
+  }, [category, getInfo]);
+
+  const save = async () => {
+    if (!category) return;
+    setBusy(true);
+    try { await onSave(category, { norma, observacao }); toast.success("Informações salvas"); onClose(); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Não foi possível salvar."); }
+    setBusy(false);
+  };
+
+  return (
+    <Dialog open={!!category} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{category ? SERVICE_CATEGORY_LABELS[category] : ""}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label>Norma</Label>
+            <Textarea value={norma} onChange={(e) => setNorma(e.target.value)} rows={3} disabled={readOnly} placeholder="Ex.: Resolução CFM nº…" />
+          </div>
+          <div>
+            <Label>Observação</Label>
+            <Textarea value={observacao} onChange={(e) => setObservacao(e.target.value)} rows={4} disabled={readOnly} placeholder="Observações sobre esta categoria…" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Fechar</Button>
+          {!readOnly && <Button onClick={save} disabled={busy}>{busy ? "Salvando…" : "Salvar"}</Button>}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 export function ServiceMatrix({ answers, setAnswer, clientId, readOnly }: Props) {
   const [q, setQ] = useState("");
