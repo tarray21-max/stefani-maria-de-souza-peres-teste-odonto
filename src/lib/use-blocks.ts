@@ -8,11 +8,16 @@ export interface Block {
   itemIds: string[];
 }
 
-const storageKey = (clientId: string, category: Category) => `blocks:v5:${clientId}:${category}`;
+const storageKey = (clientId: string, category: Category) => `blocks:v6:${clientId}:${category}`;
 const blockId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `b_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
-const legacyStorageKeys = (clientId: string, category: Category) => ["v4", "v3", "v2"].map((v) => `blocks:${v}:${clientId}:${category}`);
-const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
-const normalizeBlocks = (rawBlocks: Block[]) => rawBlocks.map((b) => ({ ...b, id: isUuid(b.id) ? b.id : blockId() }));
+// Remove caches antigos (v2..v5) que podem conter IDs de blocos pertencentes a outras categorias
+// e causar vazamento entre seções (ex.: TCLE×POP "matriz" vs. "fora da matriz").
+const purgeLegacyCaches = (clientId: string, category: Category) => {
+  if (typeof window === "undefined") return;
+  for (const v of ["v2", "v3", "v4", "v5"]) {
+    try { localStorage.removeItem(`blocks:${v}:${clientId}:${category}`); } catch { /* ignore */ }
+  }
+};
 
 interface BlockRow { id: string; name: string; item_ids: string[]; position: number }
 
