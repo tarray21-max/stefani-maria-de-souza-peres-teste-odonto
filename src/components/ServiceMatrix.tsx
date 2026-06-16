@@ -419,7 +419,7 @@ export function ServiceMatrix({ answers, setAnswer, clientId, readOnly }: Props)
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
-                            <CategoriesPopover item={s} />
+                            <CategoriesPopover item={s} onOpenCategory={(c) => setInfoCategory(c)} />
                           </div>
                         )}
                         <span className="text-sm text-foreground truncate" title={`${s.name}\n\nCategorias: ${catTitle}`}>{s.name}</span>
