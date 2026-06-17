@@ -177,9 +177,11 @@ export function ServiceMatrix({ answers, setAnswer, clientId, readOnly }: Props)
   const [renameDraft, setRenameDraft] = useState("");
   const [deleteBlockId, setDeleteBlockId] = useState<string | null>(null);
   const [infoCategory, setInfoCategory] = useState<ServiceCategory | null>(null);
+  const [viewItem, setViewItem] = useState<ServiceMatrixItem | null>(null);
 
-  const { items, addItem, updateItem, deleteItem: removeItem, reorderItems } = useServiceMatrixItems(clientId);
+  const { items, addItem, updateItem, ensurePersisted, deleteItem: removeItem, reorderItems } = useServiceMatrixItems(clientId);
   const { get: getCategoryInfo, save: saveCategoryInfo } = useCategoryInfo(clientId);
+  const { get: getImages, upload: uploadImage, remove: removeImage } = useServiceItemImages(clientId);
 
   const allIds = useMemo(() => items.map((i) => i.id), [items]);
   const { blocks, addBlock, renameBlock, deleteBlock, moveBlock, moveItemToBlock, blockOfItem } =
