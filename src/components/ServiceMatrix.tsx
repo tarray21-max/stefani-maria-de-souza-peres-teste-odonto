@@ -519,19 +519,44 @@ export function ServiceMatrix({ answers, setAnswer, clientId, readOnly }: Props)
         onSave={saveCategoryInfo}
         readOnly={readOnly}
       />
+
+      <ServiceItemViewDialog
+        item={viewItem}
+        onClose={() => setViewItem(null)}
+        getImages={getImages}
+        onEdit={(it) => { setViewItem(null); setEditItem(it); }}
+      />
     </Card>
   );
 }
 
-function ServiceFormDialog({ open, item, onClose, onSave }: { open: boolean; item?: ServiceMatrixItem | null; onClose: () => void; onSave: (name: string, categories: ServiceCategory[]) => Promise<void> }) {
+interface FormProps {
+  open: boolean;
+  item?: ServiceMatrixItem | null;
+  clientId: string | null;
+  ensurePersisted: (item: ServiceMatrixItem) => Promise<string>;
+  getImages: (itemId: string) => ServiceItemImage[];
+  uploadImage: (itemId: string, file: File) => Promise<void>;
+  removeImage: (image: ServiceItemImage) => Promise<void>;
+  onClose: () => void;
+  onSave: (payload: ServiceItemPayload, pendingImages: File[]) => Promise<void>;
+}
+
+function ServiceFormDialog({ open, item, clientId, ensurePersisted, getImages, uploadImage, removeImage, onClose, onSave }: FormProps) {
   const [name, setName] = useState("");
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
+  const [norma, setNorma] = useState("");
+  const [observacao, setObservacao] = useState("");
+  const [pendingImages, setPendingImages] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (open) {
       setName(item?.name ?? "");
       setCategories(item?.categories ?? []);
+      setNorma(item?.norma ?? "");
+      setObservacao(item?.observacao ?? "");
+      setPendingImages([]);
       setBusy(false);
     }
   }, [open, item]);
@@ -540,16 +565,33 @@ function ServiceFormDialog({ open, item, onClose, onSave }: { open: boolean; ite
     setCategories((prev) => on ? Array.from(new Set([...prev, c])) : prev.filter((x) => x !== c));
   };
 
+  const onPickFiles = (files: FileList | null) => {
+    if (!files) return;
+    setPendingImages((prev) => [...prev, ...Array.from(files)]);
+  };
+
+  const handleExistingUpload = async (files: FileList | null) => {
+    if (!files || !item) return;
+    try {
+      const realId = await ensurePersisted(item);
+      for (const f of Array.from(files)) await uploadImage(realId, f);
+      toast.success("Imagem enviada");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Não foi possível enviar a imagem."); }
+  };
+
   const save = async () => {
     if (!name.trim()) return toast.error("Informe o nome do procedimento.");
     setBusy(true);
-    try { await onSave(name.trim(), categories); } catch (error) { toast.error(error instanceof Error ? error.message : "Não foi possível salvar."); }
+    try { await onSave({ name: name.trim(), categories, norma, observacao }, pendingImages); }
+    catch (error) { toast.error(error instanceof Error ? error.message : "Não foi possível salvar."); }
     setBusy(false);
   };
 
+  const existingImages = item ? getImages(item.id) : [];
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>{item ? "Editar procedimento" : "Novo procedimento"}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div><Label>Procedimento</Label><Textarea value={name} onChange={(e) => setName(e.target.value)} rows={2} /></div>
@@ -567,10 +609,119 @@ function ServiceFormDialog({ open, item, onClose, onSave }: { open: boolean; ite
               })}
             </div>
           </div>
+          <div>
+            <Label>Norma</Label>
+            <Textarea value={norma} onChange={(e) => setNorma(e.target.value)} rows={3} placeholder="Ex.: Resolução CFM nº…" />
+          </div>
+          <div>
+            <Label>Observação</Label>
+            <Textarea value={observacao} onChange={(e) => setObservacao(e.target.value)} rows={3} placeholder="Observações sobre este procedimento…" />
+          </div>
+          <div>
+            <Label>Imagens</Label>
+            {item ? (
+              <>
+                {existingImages.length > 0 && (
+                  <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {existingImages.map((img) => (
+                      <div key={img.id} className="relative group rounded-md overflow-hidden border border-border/60 aspect-square bg-muted">
+                        <img src={img.url} alt="" className="w-full h-full object-cover" />
+                        <button type="button" onClick={() => removeImage(img).catch((e) => toast.error(e instanceof Error ? e.message : "Erro"))}
+                          className="absolute top-1 right-1 w-6 h-6 inline-flex items-center justify-center rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 hover:bg-danger transition">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <label className="mt-2 inline-flex items-center gap-2 text-sm cursor-pointer rounded-md border border-dashed border-border px-3 py-2 hover:bg-muted/40">
+                  <ImagePlus className="w-4 h-4" /> Adicionar imagem
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => { handleExistingUpload(e.target.files); e.target.value = ""; }} />
+                </label>
+              </>
+            ) : (
+              <>
+                {pendingImages.length > 0 && (
+                  <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {pendingImages.map((f, i) => (
+                      <div key={i} className="relative group rounded-md overflow-hidden border border-border/60 aspect-square bg-muted">
+                        <img src={URL.createObjectURL(f)} alt="" className="w-full h-full object-cover" />
+                        <button type="button" onClick={() => setPendingImages((prev) => prev.filter((_, idx) => idx !== i))}
+                          className="absolute top-1 right-1 w-6 h-6 inline-flex items-center justify-center rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 hover:bg-danger transition">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <label className="mt-2 inline-flex items-center gap-2 text-sm cursor-pointer rounded-md border border-dashed border-border px-3 py-2 hover:bg-muted/40">
+                  <ImagePlus className="w-4 h-4" /> Adicionar imagem
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => { onPickFiles(e.target.files); e.target.value = ""; }} />
+                </label>
+                <p className="text-[11px] text-muted-foreground mt-1">As imagens serão enviadas após salvar o procedimento.</p>
+              </>
+            )}
+            {!clientId && <p className="text-[11px] text-muted-foreground mt-1">Cadastre uma clínica para anexar imagens.</p>}
+          </div>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>Cancelar</Button>
           <Button onClick={save} disabled={busy}>{busy ? "Salvando…" : "Salvar"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ServiceItemViewDialog({
+  item, onClose, getImages, onEdit,
+}: {
+  item: ServiceMatrixItem | null;
+  onClose: () => void;
+  getImages: (itemId: string) => ServiceItemImage[];
+  onEdit: (item: ServiceMatrixItem) => void;
+}) {
+  const imgs = item ? getImages(item.id) : [];
+  return (
+    <Dialog open={!!item} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>{item?.name}</DialogTitle></DialogHeader>
+        {item && (
+          <div className="space-y-3">
+            {(item.categories ?? []).length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {item.categories.map((c) => (
+                  <Badge key={c} variant="outline" className="text-xs">{SERVICE_CATEGORY_LABELS[c]}</Badge>
+                ))}
+              </div>
+            )}
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Norma</div>
+              <p className="text-sm whitespace-pre-wrap text-foreground">{item.norma?.trim() || <span className="text-muted-foreground italic">Não informada.</span>}</p>
+            </div>
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Observação</div>
+              <p className="text-sm whitespace-pre-wrap text-foreground">{item.observacao?.trim() || <span className="text-muted-foreground italic">Sem observações.</span>}</p>
+            </div>
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Imagens</div>
+              {imgs.length === 0 ? (
+                <p className="text-sm text-muted-foreground italic">Nenhuma imagem anexada.</p>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {imgs.map((img) => (
+                    <a key={img.id} href={img.url} target="_blank" rel="noreferrer" className="block rounded-md overflow-hidden border border-border/60 aspect-square bg-muted">
+                      <img src={img.url} alt="" className="w-full h-full object-cover hover:opacity-90 transition" />
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Fechar</Button>
+          {item && <Button onClick={() => onEdit(item)}><Pencil className="w-3.5 h-3.5 mr-1" /> Editar</Button>}
         </DialogFooter>
       </DialogContent>
     </Dialog>
