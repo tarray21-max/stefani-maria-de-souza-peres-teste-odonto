@@ -630,6 +630,41 @@ export type Database = {
           },
         ]
       }
+      service_matrix_item_images: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          item_id: string
+          path: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          item_id: string
+          path: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          path?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_matrix_item_images_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_matrix_items: {
         Row: {
           area: string
@@ -642,6 +677,8 @@ export type Database = {
           id: string
           is_default: boolean
           name: string
+          norma: string | null
+          observacao: string | null
           position: number
           updated_at: string
         }
@@ -656,6 +693,8 @@ export type Database = {
           id?: string
           is_default?: boolean
           name: string
+          norma?: string | null
+          observacao?: string | null
           position?: number
           updated_at?: string
         }
@@ -670,6 +709,8 @@ export type Database = {
           id?: string
           is_default?: boolean
           name?: string
+          norma?: string | null
+          observacao?: string | null
           position?: number
           updated_at?: string
         }
