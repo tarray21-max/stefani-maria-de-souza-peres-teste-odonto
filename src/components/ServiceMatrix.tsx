@@ -426,7 +426,7 @@ export function ServiceMatrix({ answers, setAnswer, clientId, readOnly }: Props)
                             <CategoriesPopover item={s} onOpenCategory={(c) => setInfoCategory(c)} />
                           </div>
                         )}
-                        <span className="text-sm text-foreground truncate" title={`${s.name}\n\nCategorias: ${catTitle}`}>{s.name}</span>
+                        <button type="button" onClick={() => setViewItem(s)} title={`${s.name}\n\nCategorias: ${catTitle}\n\nClique para ver norma, observação e imagens`} className="text-sm text-foreground truncate text-left hover:text-primary hover:underline cursor-pointer">{s.name}</button>
                       </div>
                       <div className="px-3 text-center"><Cell current={aT} onChange={(v) => setAnswer(idT, v)} readOnly={readOnly} /></div>
                       <div className="px-3 text-center"><Cell current={aP} onChange={(v) => setAnswer(idP, v)} readOnly={readOnly} /></div>
