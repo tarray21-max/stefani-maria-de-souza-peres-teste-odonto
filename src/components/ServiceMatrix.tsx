@@ -442,24 +442,38 @@ export function ServiceMatrix({ answers, setAnswer, clientId, readOnly }: Props)
 
       <ServiceFormDialog
         open={!!creating}
+        clientId={clientId}
+        ensurePersisted={ensurePersisted}
+        getImages={getImages}
+        uploadImage={uploadImage}
+        removeImage={removeImage}
         onClose={() => setCreating(null)}
-        onSave={async (name, categories) => {
-          await addItem(name, categories);
+        onSave={async (payload, pendingImages) => {
+          const newId = await addItem(payload);
+          for (const f of pendingImages) {
+            try { await uploadImage(newId, f); } catch (e) { console.error(e); }
+          }
           const targetBlockId = creating?.blockId ?? null;
           setCreating(null);
-          // Move the newly created item into the target block. We identify it as the
-          // most recent custom item with the same name (refresh ran inside addItem).
-          if (targetBlockId) {
-            // Defer to next microtask so items list is up-to-date.
-            setTimeout(() => {
-              const created = [...items].reverse().find((i) => !i.isDefault && i.name === name);
-              if (created) moveItemToBlock(created.id, targetBlockId);
-            }, 0);
-          }
+          if (targetBlockId) moveItemToBlock(newId, targetBlockId);
           toast.success("Procedimento criado");
         }}
       />
-      <ServiceFormDialog open={!!editItem} item={editItem} onClose={() => setEditItem(null)} onSave={async (name, categories) => { if (editItem) await updateItem(editItem, name, categories); setEditItem(null); toast.success("Procedimento salvo"); }} />
+      <ServiceFormDialog
+        open={!!editItem}
+        item={editItem}
+        clientId={clientId}
+        ensurePersisted={ensurePersisted}
+        getImages={getImages}
+        uploadImage={uploadImage}
+        removeImage={removeImage}
+        onClose={() => setEditItem(null)}
+        onSave={async (payload) => {
+          if (editItem) await updateItem(editItem, payload);
+          setEditItem(null);
+          toast.success("Procedimento salvo");
+        }}
+      />
 
       <Dialog open={!!renameBlockId} onOpenChange={(o) => !o && setRenameBlockId(null)}>
         <DialogContent>
