@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowDown, ArrowUp, FileSignature, FileText, FolderInput, FolderPlus, GripVertical, MoreVertical, Pencil, Plus, Search, Tags, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, FileSignature, FileText, FolderInput, FolderPlus, GripVertical, ImagePlus, MoreVertical, Pencil, Plus, Search, Tags, Trash2, X } from "lucide-react";
 import type { Answer, ResponseMap } from "@/lib/checklist-data";
 import { cn } from "@/lib/utils";
 import { useBlocks, type Block } from "@/lib/use-blocks";
@@ -20,10 +20,12 @@ import {
   SERVICE_CATEGORY_LABELS,
   SERVICE_CATEGORY_OPTIONS,
   type ServiceCategory,
+  type ServiceItemPayload,
   type ServiceMatrixItem,
   useServiceMatrixItems,
 } from "@/lib/use-service-matrix-items";
 import { useCategoryInfo, type CategoryInfo } from "@/lib/use-category-info";
+import { useServiceItemImages, type ServiceItemImage } from "@/lib/use-service-item-images";
 import { toast } from "sonner";
 
 interface Props {
