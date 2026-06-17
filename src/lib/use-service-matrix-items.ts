@@ -39,6 +39,8 @@ export interface ServiceMatrixItem {
   isDefault: boolean;
   defaultKey: string | null;
   position: number;
+  norma: string;
+  observacao: string;
 }
 
 interface ServiceMatrixRow {
@@ -50,6 +52,8 @@ interface ServiceMatrixRow {
   default_key: string | null;
   disabled: boolean;
   position: number;
+  norma: string | null;
+  observacao: string | null;
 }
 
 const defaultItems = SERVICOS_TCLE_POP.map((name, index): ServiceMatrixItem => ({
@@ -60,10 +64,19 @@ const defaultItems = SERVICOS_TCLE_POP.map((name, index): ServiceMatrixItem => (
   isDefault: true,
   defaultKey: serviceSlug(name),
   position: index,
+  norma: "",
+  observacao: "",
 }));
 
 export function serviceAnswerId(kind: "tcle" | "pop", item: ServiceMatrixItem) {
   return item.isDefault && item.defaultKey ? `srv_${kind}_${item.defaultKey}` : `srv_${kind}_custom_${item.id}`;
+}
+
+export interface ServiceItemPayload {
+  name: string;
+  categories: ServiceCategory[];
+  norma: string;
+  observacao: string;
 }
 
 export function useServiceMatrixItems(clientId: string | null) {
@@ -74,7 +87,7 @@ export function useServiceMatrixItems(clientId: string | null) {
     if (!clientId) { setRows([]); setLoaded(true); return; }
     const { data, error } = await (supabase as any)
       .from("service_matrix_items")
-      .select("id,name,area,categories,is_default,default_key,disabled,position")
+      .select("id,name,area,categories,is_default,default_key,disabled,position,norma,observacao")
       .eq("client_id", clientId)
       .order("position", { ascending: true });
     if (!error) setRows((data ?? []) as ServiceMatrixRow[]);
@@ -103,6 +116,8 @@ export function useServiceMatrixItems(clientId: string | null) {
         area: override?.area ?? item.area,
         categories: (override?.categories ?? []) as ServiceCategory[],
         position: override?.position ?? item.position,
+        norma: override?.norma ?? "",
+        observacao: override?.observacao ?? "",
       }];
     });
     const custom = rows
@@ -115,34 +130,71 @@ export function useServiceMatrixItems(clientId: string | null) {
         isDefault: false,
         defaultKey: null,
         position: r.position,
+        norma: r.norma ?? "",
+        observacao: r.observacao ?? "",
       }));
     return [...mergedDefaults, ...custom].sort((a, b) => a.position - b.position || a.name.localeCompare(b.name, "pt-BR"));
   }, [rows]);
 
-  const addItem = useCallback(async (name: string, categories: ServiceCategory[]) => {
+  const addItem = useCallback(async (payload: ServiceItemPayload): Promise<string> => {
     if (!clientId) throw new Error("Cadastre uma clínica.");
     const maxPosition = items.reduce((max, item) => Math.max(max, item.position), -1);
-    const { error } = await (supabase as any).from("service_matrix_items").insert({
+    const { data, error } = await (supabase as any).from("service_matrix_items").insert({
       client_id: clientId,
-      name,
+      name: payload.name,
       area: "ambas",
-      categories,
+      categories: payload.categories,
       is_default: false,
       position: maxPosition + 1,
-    });
+      norma: payload.norma,
+      observacao: payload.observacao,
+    }).select("id").single();
     if (error) throw error;
     await refresh();
+    return data.id as string;
   }, [clientId, items, refresh]);
 
-  const updateItem = useCallback(async (item: ServiceMatrixItem, name: string, categories: ServiceCategory[]) => {
+  const updateItem = useCallback(async (item: ServiceMatrixItem, payload: ServiceItemPayload): Promise<string> => {
     if (!clientId) throw new Error("Cadastre uma clínica.");
-    const payload = item.isDefault
-      ? { id: item.id.startsWith("default:") ? undefined : item.id, client_id: clientId, name, area: item.area, categories, is_default: true, default_key: item.defaultKey, disabled: false, position: item.position }
-      : { id: item.id, client_id: clientId, name, area: item.area, categories, is_default: false, default_key: null, disabled: false, position: item.position };
-    const { error } = await (supabase as any).from("service_matrix_items").upsert(payload, { onConflict: item.isDefault ? "client_id,default_key" : "id" });
+    const base = {
+      client_id: clientId,
+      name: payload.name,
+      area: item.area,
+      categories: payload.categories,
+      norma: payload.norma,
+      observacao: payload.observacao,
+    };
+    if (item.isDefault) {
+      const { data, error } = await (supabase as any).from("service_matrix_items").upsert({
+        ...base,
+        id: item.id.startsWith("default:") ? undefined : item.id,
+        is_default: true,
+        default_key: item.defaultKey,
+        disabled: false,
+        position: item.position,
+      }, { onConflict: "client_id,default_key" }).select("id").single();
+      if (error) throw error;
+      await refresh();
+      return data.id as string;
+    }
+    const { data, error } = await (supabase as any).from("service_matrix_items").upsert({
+      ...base,
+      id: item.id,
+      is_default: false,
+      default_key: null,
+      disabled: false,
+      position: item.position,
+    }, { onConflict: "id" }).select("id").single();
     if (error) throw error;
     await refresh();
+    return data.id as string;
   }, [clientId, refresh]);
+
+  /** Ensures a default item is persisted in DB. Returns the real uuid. No-op for custom items. */
+  const ensurePersisted = useCallback(async (item: ServiceMatrixItem): Promise<string> => {
+    if (!item.isDefault || !item.id.startsWith("default:")) return item.id;
+    return updateItem(item, { name: item.name, categories: item.categories, norma: item.norma, observacao: item.observacao });
+  }, [updateItem]);
 
   const deleteItem = useCallback(async (item: ServiceMatrixItem) => {
     if (!clientId) throw new Error("Cadastre uma clínica.");
@@ -175,6 +227,8 @@ export function useServiceMatrixItems(clientId: string | null) {
       default_key: item.defaultKey,
       disabled: false,
       position,
+      norma: item.norma,
+      observacao: item.observacao,
     }));
     const defaultRows = rowsToSave.filter((row) => row.is_default);
     const customRows = rowsToSave.filter((row) => !row.is_default);
@@ -189,5 +243,5 @@ export function useServiceMatrixItems(clientId: string | null) {
     await refresh();
   }, [clientId, refresh]);
 
-  return { items, loaded, refresh, addItem, updateItem, deleteItem, reorderItems };
+  return { items, loaded, refresh, addItem, updateItem, ensurePersisted, deleteItem, reorderItems };
 }
