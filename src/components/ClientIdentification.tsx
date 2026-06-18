@@ -78,14 +78,18 @@ export function ClientIdentification() {
     // `area` column only accepts the legacy enum (odontologia | medicina); pick a compatible primary
     const legacyArea = (areas.find((a) => a === "odontologia" || a === "medicina") ?? "odontologia") as "odontologia" | "medicina";
     const especialidades = (draft.especialidades ?? []).map((s) => s.trim()).filter(Boolean);
+    const numeros = (draft.especialidades_numeros ?? []).slice(0, especialidades.length);
+    while (numeros.length < especialidades.length) numeros.push("");
     const payload = {
       nome: draft.nome,
       cnpj: draft.cnpj ?? null,
       profissional_responsavel: draft.profissional_responsavel ?? null,
+      crm_cro: draft.crm_cro ?? null,
       area: legacyArea,
       areas,
       especialidade: especialidades[0] ?? draft.especialidade ?? null,
       especialidades,
+      especialidades_numeros: numeros,
       endereco: draft.endereco ?? null,
       telefone: draft.telefone ?? null,
       tipo_contrato: tipo,
