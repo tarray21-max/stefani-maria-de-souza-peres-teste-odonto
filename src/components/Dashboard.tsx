@@ -62,10 +62,20 @@ export function Dashboard({ answers, items, client, categoryLabels, categoryOrde
       ].filter((p) => p && String(p).trim().length > 0).join(" • ")
     : "";
 
+  const especialidadesFormatadas = client
+    ? (client.especialidades && client.especialidades.length > 0
+        ? client.especialidades.map((e, i) => {
+            const n = (client.especialidades_numeros ?? [])[i];
+            return n ? `${e} (${n})` : e;
+          }).join(", ")
+        : client.especialidade)
+    : null;
+
   const clinicaItems = client
     ? [
         { icon: User, label: "Responsável Técnico", value: client.profissional_responsavel },
-        { icon: Stethoscope, label: "Especialidades", value: (client.especialidades && client.especialidades.length > 0 ? client.especialidades.join(", ") : client.especialidade) },
+        { icon: Hash, label: "CRM / CRO", value: client.crm_cro },
+        { icon: Stethoscope, label: "Especialidades", value: especialidadesFormatadas },
         { icon: Hash, label: "CNPJ", value: formatCNPJ(client.cnpj) },
         { icon: Briefcase, label: "Contrato", value: contractLabel(client) },
         { icon: Phone, label: "Telefone", value: formatPhone(client.telefone) },
