@@ -26,6 +26,8 @@ export interface ClientRow {
   tipo_contrato: "assessoria_odontologica" | "assessoria_medica" | "regularizacao_sanitaria";
   contract_type_label: string | null;
   especialidades: string[];
+  especialidades_numeros: string[];
+  crm_cro: string | null;
 }
 
 interface ClientCtx {
@@ -74,6 +76,8 @@ export function ClientProvider({ children }: { children: ReactNode }) {
         especialidades: Array.isArray(r.especialidades) && r.especialidades.length > 0
           ? (r.especialidades as string[])
           : (r.especialidade ? [r.especialidade as string] : []),
+        especialidades_numeros: Array.isArray(r.especialidades_numeros) ? (r.especialidades_numeros as string[]) : [],
+        crm_cro: (r.crm_cro as string | null) ?? null,
       })) as ClientRow[];
       setClients(rows);
     }

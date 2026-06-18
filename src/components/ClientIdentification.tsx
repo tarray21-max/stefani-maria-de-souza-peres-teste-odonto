@@ -78,14 +78,18 @@ export function ClientIdentification() {
     // `area` column only accepts the legacy enum (odontologia | medicina); pick a compatible primary
     const legacyArea = (areas.find((a) => a === "odontologia" || a === "medicina") ?? "odontologia") as "odontologia" | "medicina";
     const especialidades = (draft.especialidades ?? []).map((s) => s.trim()).filter(Boolean);
+    const numeros = (draft.especialidades_numeros ?? []).slice(0, especialidades.length);
+    while (numeros.length < especialidades.length) numeros.push("");
     const payload = {
       nome: draft.nome,
       cnpj: draft.cnpj ?? null,
       profissional_responsavel: draft.profissional_responsavel ?? null,
+      crm_cro: draft.crm_cro ?? null,
       area: legacyArea,
       areas,
       especialidade: especialidades[0] ?? draft.especialidade ?? null,
       especialidades,
+      especialidades_numeros: numeros,
       endereco: draft.endereco ?? null,
       telefone: draft.telefone ?? null,
       tipo_contrato: tipo,
@@ -141,12 +145,22 @@ export function ClientIdentification() {
                 <div className="text-xs text-muted-foreground truncate">
                   {[
                     (current.areas && current.areas.length > 0 ? current.areas : [current.area]).map((a) => AREA_LABEL[a] ?? a).join(" + "),
-                    (current.especialidades && current.especialidades.length > 0 ? current.especialidades.join(", ") : current.especialidade),
+                    (current.especialidades && current.especialidades.length > 0
+                      ? current.especialidades.map((e, i) => {
+                          const n = (current.especialidades_numeros ?? [])[i];
+                          return n ? `${e} (${n})` : e;
+                        }).join(", ")
+                      : current.especialidade),
                     current.cnpj,
                   ].filter(Boolean).join(" • ")}
                 </div>
                 <div className="text-xs text-muted-foreground truncate">
-                  {[current.profissional_responsavel, current.telefone, current.endereco].filter(Boolean).join(" • ")}
+                  {[
+                    current.profissional_responsavel,
+                    current.crm_cro,
+                    current.telefone,
+                    current.endereco,
+                  ].filter(Boolean).join(" • ")}
                 </div>
                 <div className="text-[10px] mt-1 inline-block px-2 py-0.5 rounded-full bg-muted uppercase tracking-wider">
                   {contractLabel(current)}
@@ -191,60 +205,70 @@ export function ClientIdentification() {
           <Label>Profissional Responsável</Label>
           <Input value={draft.profissional_responsavel ?? ""} onChange={(e) => setDraft({ ...draft, profissional_responsavel: e.target.value })} />
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <Label>Categorias</Label>
-            <div className="border rounded-md p-2 space-y-1.5 bg-background">
-              {AREA_OPTIONS.map((opt) => {
-                const checked = (draft.areas ?? (draft.area ? [draft.area] : [])).includes(opt.value);
-                return (
-                  <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer">
-                    <Checkbox checked={checked} onCheckedChange={() => toggleArea(opt.value)} />
-                    <span>{opt.label}</span>
-                  </label>
-                );
-              })}
-            </div>
+        <div>
+          <Label>CRM / CRO do Responsável</Label>
+          <Input placeholder="Ex.: CRM/SP 123456" value={draft.crm_cro ?? ""} onChange={(e) => setDraft({ ...draft, crm_cro: e.target.value })} />
+        </div>
+        <div>
+          <Label>Categorias</Label>
+          <div className="border rounded-md p-2 space-y-1.5 bg-background">
+            {AREA_OPTIONS.map((opt) => {
+              const checked = (draft.areas ?? (draft.area ? [draft.area] : [])).includes(opt.value);
+              return (
+                <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Checkbox checked={checked} onCheckedChange={() => toggleArea(opt.value)} />
+                  <span>{opt.label}</span>
+                </label>
+              );
+            })}
           </div>
-          <div>
-            <Label>Especialidades</Label>
-            <div className="border rounded-md p-2 bg-background min-h-9 flex flex-wrap gap-1.5 items-center">
-              {(draft.especialidades ?? []).map((esp, idx) => (
-                <span key={`${esp}-${idx}`} className="inline-flex items-center gap-1 text-xs bg-muted px-2 py-0.5 rounded-full">
-                  {esp}
-                  <button
-                    type="button"
-                    className="text-muted-foreground hover:text-foreground"
-                    onClick={() => setDraft({ ...draft, especialidades: (draft.especialidades ?? []).filter((_, i) => i !== idx) })}
-                    aria-label={`Remover ${esp}`}
-                  >×</button>
-                </span>
-              ))}
-              <input
-                className="flex-1 min-w-[8ch] bg-transparent outline-none text-sm py-0.5"
-                placeholder="Digite e pressione Enter"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === ",") {
-                    e.preventDefault();
-                    const val = (e.currentTarget.value ?? "").trim();
-                    if (!val) return;
-                    const cur = draft.especialidades ?? [];
-                    if (!cur.includes(val)) setDraft({ ...draft, especialidades: [...cur, val] });
-                    e.currentTarget.value = "";
-                  } else if (e.key === "Backspace" && !(e.currentTarget.value ?? "")) {
-                    const cur = draft.especialidades ?? [];
-                    if (cur.length > 0) setDraft({ ...draft, especialidades: cur.slice(0, -1) });
-                  }
-                }}
-                onBlur={(e) => {
-                  const val = (e.currentTarget.value ?? "").trim();
-                  if (!val) return;
-                  const cur = draft.especialidades ?? [];
-                  if (!cur.includes(val)) setDraft({ ...draft, especialidades: [...cur, val] });
-                  e.currentTarget.value = "";
-                }}
-              />
-            </div>
+        </div>
+        <div>
+          <Label>Especialidades e nº de registro</Label>
+          <div className="border rounded-md p-2 bg-background space-y-1.5">
+            {(draft.especialidades ?? []).map((esp, idx) => (
+              <div key={`${esp}-${idx}`} className="flex items-center gap-1.5">
+                <Input
+                  className="h-8 text-sm flex-1"
+                  value={esp}
+                  onChange={(e) => {
+                    const next = [...(draft.especialidades ?? [])];
+                    next[idx] = e.target.value;
+                    setDraft({ ...draft, especialidades: next });
+                  }}
+                />
+                <Input
+                  className="h-8 text-sm w-40"
+                  placeholder="Nº registro (RQE/título)"
+                  value={(draft.especialidades_numeros ?? [])[idx] ?? ""}
+                  onChange={(e) => {
+                    const next = [...(draft.especialidades_numeros ?? [])];
+                    while (next.length <= idx) next.push("");
+                    next[idx] = e.target.value;
+                    setDraft({ ...draft, especialidades_numeros: next });
+                  }}
+                />
+                <button
+                  type="button"
+                  className="w-7 h-7 inline-flex items-center justify-center text-muted-foreground hover:text-danger"
+                  onClick={() => {
+                    const esps = (draft.especialidades ?? []).filter((_, i) => i !== idx);
+                    const nums = (draft.especialidades_numeros ?? []).filter((_, i) => i !== idx);
+                    setDraft({ ...draft, especialidades: esps, especialidades_numeros: nums });
+                  }}
+                  aria-label={`Remover ${esp}`}
+                >×</button>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="text-xs text-primary hover:underline mt-1"
+              onClick={() => setDraft({
+                ...draft,
+                especialidades: [...(draft.especialidades ?? []), ""],
+                especialidades_numeros: [...(draft.especialidades_numeros ?? []), ""],
+              })}
+            >+ Adicionar especialidade</button>
           </div>
         </div>
         <div>

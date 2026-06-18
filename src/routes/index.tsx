@@ -84,17 +84,24 @@ function Index() {
       <ClientSidebar onSignOut={async () => { await signOut(); window.location.href = "/login"; }} />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-12 flex items-center gap-2 border-b border-border/60 bg-card/60 backdrop-blur-sm sticky top-0 z-30 px-3">
+        <header className="min-h-14 flex items-center gap-3 border-b border-border/60 bg-card/60 backdrop-blur-sm sticky top-0 z-30 px-3 py-2">
           <SidebarTrigger />
           <div className="flex-1 min-w-0">
             <div className="font-semibold text-sm text-foreground truncate">
               {current?.nome ?? "Selecione uma clínica"}
             </div>
-            {current && (
-              <div className="text-[11px] text-muted-foreground truncate">
-                {[current.area === "odontologia" ? "Odontologia" : "Medicina", current.especialidade, current.cnpj].filter(Boolean).join(" • ")}
-              </div>
-            )}
+            {current && (() => {
+              const labels: Record<string, string> = { medicina: "Médica", odontologia: "Odontológica", biomedicina: "Biomédica" };
+              const areas = (current.areas && current.areas.length > 0 ? current.areas : (current.area ? [current.area] : []))
+                .map((a) => labels[a] ?? a).join(" + ");
+              const parts = [
+                current.profissional_responsavel ? `Resp. Legal: ${current.profissional_responsavel}` : null,
+                areas ? `Área: ${areas}` : null,
+              ].filter(Boolean);
+              return parts.length ? (
+                <div className="text-[11px] text-muted-foreground truncate">{parts.join(" • ")}</div>
+              ) : null;
+            })()}
           </div>
           <ThemeToggle />
         </header>

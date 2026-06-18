@@ -427,6 +427,11 @@ export function ServiceMatrix({ answers, setAnswer, clientId, readOnly }: Props)
                           </div>
                         )}
                         <button type="button" onClick={() => setViewItem(s)} title={`${s.name}\n\nCategorias: ${catTitle}\n\nClique para ver norma, observação e imagens`} className="text-sm text-foreground truncate text-left hover:text-primary hover:underline cursor-pointer">{s.name}</button>
+                        {getImages(s.id).length > 0 && (
+                          <Badge variant="outline" className="ml-1 text-[10px] px-1.5 py-0 h-5 inline-flex items-center gap-1">
+                            <ImagePlus className="w-2.5 h-2.5" />{getImages(s.id).length}
+                          </Badge>
+                        )}
                       </div>
                       <div className="px-3 text-center"><Cell current={aT} onChange={(v) => setAnswer(idT, v)} readOnly={readOnly} /></div>
                       <div className="px-3 text-center"><Cell current={aP} onChange={(v) => setAnswer(idP, v)} readOnly={readOnly} /></div>
