@@ -195,9 +195,11 @@ export type Database = {
           complemento: string | null
           contract_type_label: string | null
           created_at: string
+          crm_cro: string | null
           endereco: string | null
           especialidade: string | null
           especialidades: string[]
+          especialidades_numeros: string[]
           estado: string | null
           id: string
           logradouro: string | null
@@ -220,9 +222,11 @@ export type Database = {
           complemento?: string | null
           contract_type_label?: string | null
           created_at?: string
+          crm_cro?: string | null
           endereco?: string | null
           especialidade?: string | null
           especialidades?: string[]
+          especialidades_numeros?: string[]
           estado?: string | null
           id?: string
           logradouro?: string | null
@@ -245,9 +249,11 @@ export type Database = {
           complemento?: string | null
           contract_type_label?: string | null
           created_at?: string
+          crm_cro?: string | null
           endereco?: string | null
           especialidade?: string | null
           especialidades?: string[]
+          especialidades_numeros?: string[]
           estado?: string | null
           id?: string
           logradouro?: string | null
