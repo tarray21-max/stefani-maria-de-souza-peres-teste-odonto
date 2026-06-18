@@ -145,12 +145,22 @@ export function ClientIdentification() {
                 <div className="text-xs text-muted-foreground truncate">
                   {[
                     (current.areas && current.areas.length > 0 ? current.areas : [current.area]).map((a) => AREA_LABEL[a] ?? a).join(" + "),
-                    (current.especialidades && current.especialidades.length > 0 ? current.especialidades.join(", ") : current.especialidade),
+                    (current.especialidades && current.especialidades.length > 0
+                      ? current.especialidades.map((e, i) => {
+                          const n = (current.especialidades_numeros ?? [])[i];
+                          return n ? `${e} (${n})` : e;
+                        }).join(", ")
+                      : current.especialidade),
                     current.cnpj,
                   ].filter(Boolean).join(" • ")}
                 </div>
                 <div className="text-xs text-muted-foreground truncate">
-                  {[current.profissional_responsavel, current.telefone, current.endereco].filter(Boolean).join(" • ")}
+                  {[
+                    current.profissional_responsavel,
+                    current.crm_cro,
+                    current.telefone,
+                    current.endereco,
+                  ].filter(Boolean).join(" • ")}
                 </div>
                 <div className="text-[10px] mt-1 inline-block px-2 py-0.5 rounded-full bg-muted uppercase tracking-wider">
                   {contractLabel(current)}
