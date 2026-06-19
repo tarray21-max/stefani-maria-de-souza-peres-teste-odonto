@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Answer, Category, ChecklistItem, Quality, ResponseMap } from "@/lib/checklist-data";
 import { getValidityStatus, type ValidityStatus } from "@/lib/checklist-data";
-import { Check, X, MinusCircle, Search, MessageSquare, Image as ImageIcon, Plus, Trash2, Pencil, Upload, Eraser, GripVertical, MoreVertical, FolderPlus, FolderInput, ArrowUp, ArrowDown, CalendarClock, Infinity as InfinityIcon } from "lucide-react";
+import { Check, X, MinusCircle, Search, MessageSquare, Image as ImageIcon, Plus, Trash2, Pencil, Upload, Eraser, GripVertical, MoreVertical, FolderPlus, FolderInput, ArrowUp, ArrowDown, CalendarClock, Infinity as InfinityIcon, Copy } from "lucide-react";
+import { CopyDestinationDialog } from "@/components/CopyDestinationDialog";
+import { copyChecklistBlock, copyChecklistItem } from "@/lib/copy-utils";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -65,6 +67,8 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
     const [dragId, setDragId] = useState<string | null>(null);
     const [overId, setOverId] = useState<string | null>(null);
     const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+    const [copyItem, setCopyItem] = useState<ChecklistItem | null>(null);
+    const [copyBlockId, setCopyBlockId] = useState<string | null>(null);
 
   const [filter, setFilter] = useState<FilterKind>("all");
 
@@ -278,6 +282,14 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
                           </button>
                           <button
                             type="button"
+                            title="Copiar bloco para outra clínica/painel"
+                            onClick={() => setCopyBlockId(g.block!.id)}
+                            className="w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-primary/10"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
                             title="Excluir bloco (mantém as perguntas)"
                             onClick={() => setDeleteBlockId(g.block!.id)}
                             className="w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-danger hover:bg-danger/10"
@@ -407,6 +419,9 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
                                       </DropdownMenuItem>
                                     </DropdownMenuSubContent>
                                   </DropdownMenuSub>
+                                  <DropdownMenuItem onClick={() => setCopyItem(item)}>
+                                    <Copy className="w-3.5 h-3.5 mr-2" /> Copiar para…
+                                  </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem onClick={() => setDeleteItem(item)} className="text-danger focus:text-danger">
                                     <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir pergunta
