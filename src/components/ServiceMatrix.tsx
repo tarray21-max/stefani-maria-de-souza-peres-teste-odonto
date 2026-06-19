@@ -543,6 +543,37 @@ export function ServiceMatrix({ answers, setAnswer, clientId, readOnly }: Props)
         getImages={getImages}
         onEdit={(it) => { setViewItem(null); setEditItem(it); }}
       />
+
+      {clientId && (
+        <CopyDestinationDialog
+          open={!!copyItem}
+          onClose={() => setCopyItem(null)}
+          title={`Copiar procedimento`}
+          description={copyItem ? `“${copyItem.name}” será duplicado no destino (com norma, observação, categorias e imagens).` : undefined}
+          category="tcle_pop_matrix"
+          sourceClientId={clientId}
+          onConfirm={async (targetClientId, targetBlockId) => {
+            if (!copyItem) return;
+            const sourceId = await ensurePersisted(copyItem);
+            await copyServiceItem({ sourceItemId: sourceId, targetClientId, targetBlockId });
+          }}
+        />
+      )}
+      {clientId && (
+        <CopyDestinationDialog
+          open={!!copyBlockId}
+          onClose={() => setCopyBlockId(null)}
+          title="Copiar bloco"
+          description="Um novo bloco será criado no destino com todos os procedimentos duplicados."
+          category="tcle_pop_matrix"
+          sourceClientId={clientId}
+          allowBlockPick={false}
+          onConfirm={async (targetClientId) => {
+            if (!copyBlockId) return;
+            await copyServiceBlock({ sourceBlockId: copyBlockId, targetClientId, category: "tcle_pop_matrix" });
+          }}
+        />
+      )}
     </Card>
   );
 }
