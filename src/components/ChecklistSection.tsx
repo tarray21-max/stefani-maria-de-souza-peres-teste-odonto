@@ -564,6 +564,46 @@ export function ChecklistSection({ category, items: allItems, answers, setAnswer
           <img src={lightboxUrl} alt="Ampliado" className="max-w-full max-h-full object-contain rounded shadow-2xl" />
         </div>
       )}
+      {clientId && (
+        <CopyDestinationDialog
+          open={!!copyItem}
+          onClose={() => setCopyItem(null)}
+          title="Copiar pergunta"
+          description={copyItem ? `“${copyItem.title}” será copiada para o destino (com norma, observação, penalidade e imagens).` : undefined}
+          category={category}
+          sourceClientId={clientId}
+          onConfirm={async (targetClientId, targetBlockId) => {
+            if (!copyItem) return;
+            await copyChecklistItem({
+              sourceItemId: copyItem.id,
+              sourceClientId: clientId,
+              targetClientId,
+              category,
+              targetBlockId,
+            });
+          }}
+        />
+      )}
+      {clientId && (
+        <CopyDestinationDialog
+          open={!!copyBlockId}
+          onClose={() => setCopyBlockId(null)}
+          title="Copiar bloco"
+          description="Um novo bloco será criado no destino com todas as perguntas duplicadas."
+          category={category}
+          sourceClientId={clientId}
+          allowBlockPick={false}
+          onConfirm={async (targetClientId) => {
+            if (!copyBlockId) return;
+            await copyChecklistBlock({
+              sourceBlockId: copyBlockId,
+              sourceClientId: clientId,
+              targetClientId,
+              category,
+            });
+          }}
+        />
+      )}
     </div>
   );
 }
