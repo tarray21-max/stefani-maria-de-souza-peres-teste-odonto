@@ -11,7 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowDown, ArrowUp, FileSignature, FileText, FolderInput, FolderPlus, GripVertical, ImagePlus, MoreVertical, Pencil, Plus, Search, Tags, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, FileSignature, FileText, FolderInput, FolderPlus, GripVertical, ImagePlus, MoreVertical, Pencil, Plus, Search, Tags, Trash2, X } from "lucide-react";
+import { CopyDestinationDialog } from "@/components/CopyDestinationDialog";
+import { copyServiceBlock, copyServiceItem } from "@/lib/copy-utils";
 import type { Answer, ResponseMap } from "@/lib/checklist-data";
 import { cn } from "@/lib/utils";
 import { useBlocks, type Block } from "@/lib/use-blocks";
@@ -178,6 +180,8 @@ export function ServiceMatrix({ answers, setAnswer, clientId, readOnly }: Props)
   const [deleteBlockId, setDeleteBlockId] = useState<string | null>(null);
   const [infoCategory, setInfoCategory] = useState<ServiceCategory | null>(null);
   const [viewItem, setViewItem] = useState<ServiceMatrixItem | null>(null);
+  const [copyItem, setCopyItem] = useState<ServiceMatrixItem | null>(null);
+  const [copyBlockId, setCopyBlockId] = useState<string | null>(null);
 
   const { items, addItem, updateItem, ensurePersisted, deleteItem: removeItem, reorderItems } = useServiceMatrixItems(clientId);
   const { get: getCategoryInfo, save: saveCategoryInfo } = useCategoryInfo(clientId);
