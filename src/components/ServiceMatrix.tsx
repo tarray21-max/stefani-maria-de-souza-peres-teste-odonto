@@ -334,6 +334,10 @@ export function ServiceMatrix({ answers, setAnswer, clientId, readOnly }: Props)
                         className="w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-primary/10">
                         <Pencil className="w-3 h-3" />
                       </button>
+                      <button type="button" title="Copiar bloco para outra clínica/painel" onClick={() => setCopyBlockId(g.block!.id)}
+                        className="w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-primary/10">
+                        <Copy className="w-3 h-3" />
+                      </button>
                       <button type="button" title="Excluir bloco (mantém os procedimentos)" onClick={() => setDeleteBlockId(g.block!.id)}
                         className="w-6 h-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-danger hover:bg-danger/10">
                         <Trash2 className="w-3 h-3" />
@@ -421,6 +425,10 @@ export function ServiceMatrix({ answers, setAnswer, clientId, readOnly }: Props)
                                     </DropdownMenuItem>
                                   </DropdownMenuSubContent>
                                 </DropdownMenuSub>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => setCopyItem(s)}>
+                                  <Copy className="w-3.5 h-3.5 mr-2" /> Copiar para…
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => setDeleteItem(s)} className="text-danger focus:text-danger">
                                   <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir procedimento
