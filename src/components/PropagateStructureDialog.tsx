@@ -45,14 +45,14 @@ export function PropagateStructureDialog({ open, onOpenChange, sourceId }: Props
           <DialogTitle>Aplicar estrutura em outros painéis</DialogTitle>
         </DialogHeader>
 
-        <div className="rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs p-3 flex gap-2">
+        <div className="rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs p-3 flex gap-2">
           <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
           <div>
-            Isso substitui perguntas customizadas, blocos, abas, ordens e itens desativados
-            dos painéis selecionados pela estrutura deste painel.
+            Modo <strong>mesclar</strong>: perguntas, blocos e itens da matriz que ainda não existem
+            no destino são adicionados. Itens que já existem são mantidos — campos vazios (norma,
+            observação, penalidade) são preenchidos com o conteúdo da origem, mas nada é sobrescrito.
             <br />
-            <strong>As respostas dos itens padrão são preservadas.</strong>
-            Respostas a perguntas customizadas que existiam apenas no destino serão perdidas.
+            <strong>Respostas, observações e dados já preenchidos no destino são preservados.</strong>
           </div>
         </div>
 
