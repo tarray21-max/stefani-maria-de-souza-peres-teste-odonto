@@ -205,7 +205,10 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
       </SidebarFooter>
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="max-w-xl max-h-[85vh] flex flex-col">
+          <DialogHeader><DialogTitle>{editing?.id ? "Editar clínica" : "Nova clínica"}</DialogTitle></DialogHeader>
+          {editing && (
+            <div className="grid md:grid-cols-2 gap-3 overflow-y-auto pr-1 flex-1 min-h-0">
           <DialogHeader><DialogTitle>{editing?.id ? "Editar clínica" : "Nova clínica"}</DialogTitle></DialogHeader>
           {editing && (
             <div className="grid md:grid-cols-2 gap-3">
