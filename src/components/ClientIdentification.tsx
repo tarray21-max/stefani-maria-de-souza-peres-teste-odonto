@@ -187,13 +187,22 @@ export function ClientIdentification() {
                     })}
                   </div>
                 )}
-                <div className="text-xs text-muted-foreground break-words mt-1">
-                  {[
-                    current.profissional_responsavel,
-                    current.crm_cro,
-                    current.telefone,
-                    current.endereco,
-                  ].filter(Boolean).join(" • ")}
+                <div className="text-xs text-muted-foreground break-words mt-1 space-y-0.5">
+                  {(current.profissional_responsavel || current.crm_cro) && (
+                    <div>{[current.profissional_responsavel, current.crm_cro].filter(Boolean).join(" — ")}</div>
+                  )}
+                  {current.telefone && <div>Tel.: {current.telefone}</div>}
+                  {(() => {
+                    const rua = [current.logradouro, current.numero].filter(Boolean).join(", ");
+                    const compl = current.complemento;
+                    const bairro = current.bairro;
+                    const cidUf = [current.cidade, current.estado].filter(Boolean).join("/");
+                    const cep = current.cep ? `CEP ${current.cep}` : null;
+                    const fullAddr = [rua, compl, bairro, cidUf, cep].filter(Boolean).join(" — ");
+                    return fullAddr ? <div>{fullAddr}</div> : null;
+                  })()}
+                  {current.endereco && <div>{current.endereco}</div>}
+                  {current.redes_sociais && <div>Redes sociais: {current.redes_sociais}</div>}
                 </div>
                 <div className="text-[10px] mt-1 inline-block px-2 py-0.5 rounded-full bg-muted uppercase tracking-wider">
                   {contractLabel(current)}
