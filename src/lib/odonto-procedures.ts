@@ -229,7 +229,7 @@ export function proceduresForSpecialties(especialidades: string[]): string[] {
  * separam os procedimentos por porte cirúrgico e tipo de consultório exigido.
  */
 export const BLOCK_ORDER: string[] = [
-  "Cirurgia de Grande Porte - Consultório Tipo II",
+  "Cirurgia de Grande Porte - Consultório Tipo III",
   "Cirurgia Médio Porte - Consultório Tipo II",
   "Cirurgia Pequeno Porte - Consultório Tipo I",
   "Injetáveis - Consultório Tipo I",
