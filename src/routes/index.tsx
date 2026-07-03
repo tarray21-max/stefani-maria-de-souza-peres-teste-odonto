@@ -102,11 +102,10 @@ function Index() {
                     if (current.profissional_responsavel) chips.push({ label: "Resp. Legal", value: current.profissional_responsavel });
                     if (areas.length) chips.push({ label: "Área", value: areas.join(" + ") });
                     if (current.especialidades && current.especialidades.length) {
-                      const esps = current.especialidades.map((e, i) => {
+                      current.especialidades.forEach((e, i) => {
                         const n = (current.especialidades_numeros ?? [])[i];
-                        return n ? `${e} (${n})` : e;
+                        chips.push({ label: "Especialidade", value: n ? `${e} (${n})` : e });
                       });
-                      chips.push({ label: esps.length > 1 ? "Especialidades" : "Especialidade", value: esps.join(", ") });
                     }
                     const enderecoCompleto = current.endereco?.trim()
                       || [current.logradouro, current.numero, current.complemento, current.bairro, [current.cidade, current.estado].filter(Boolean).join("/"), current.cep].filter(Boolean).join(", ");
@@ -115,8 +114,8 @@ function Index() {
                     if (current.redes_sociais) chips.push({ label: "Redes sociais", value: current.redes_sociais });
                     return chips.length ? (
                       <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                        {chips.map((c) => (
-                          <span key={c.label} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] text-foreground/80">
+                        {chips.map((c, i) => (
+                          <span key={`${c.label}-${i}`} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] text-foreground/80">
                             <span className="text-muted-foreground">{c.label}:</span>
                             <span className="font-medium truncate max-w-[420px]">{c.value}</span>
                           </span>
