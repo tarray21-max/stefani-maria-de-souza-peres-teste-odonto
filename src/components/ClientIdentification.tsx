@@ -43,6 +43,32 @@ const AREA_LABEL: Record<AreaAtuacao, string> = {
   biomedicina: "Biomédica",
 };
 
+const ODONTO_ESPECIALIDADES = [
+  "Dentística",
+  "Endodontia",
+  "Periodontia",
+  "Prótese Dentária",
+  "Ortodontia",
+  "Implantodontia",
+  "Odontopediatria",
+  "Odontogeriatria",
+  "Estomatologia",
+  "Ortopedia Funcional dos Maxilares",
+  "Disfunção Temporomandibular e Dor Orofacial (DTM)",
+  "Odontologia para Pacientes com Necessidades Especiais",
+  "Cirurgia e Traumatologia Bucomaxilofacial (CTBMF)",
+  "Cirurgia Estética Orofacial (CEOF)",
+  "Harmonização Orofacial (HOF)",
+  "Radiologia Odontológica e Imaginologia",
+  "Patologia Oral (Patologia Bucal)",
+  "Odontologia em Saúde Coletiva",
+  "Odontologia Legal",
+  "Odontologia do Trabalho",
+  "Odontologia Hospitalar",
+  "Homeopatia",
+  "Acupuntura",
+];
+
 export function ClientIdentification() {
   const { user } = useAuth();
   const { current, setCurrentId, refresh } = useClients();
@@ -232,51 +258,133 @@ export function ClientIdentification() {
         </div>
         <div>
           <Label>Especialidades e nº de registro</Label>
-          <div className="border rounded-md p-2 bg-background space-y-1.5">
-            {(draft.especialidades ?? []).map((esp, idx) => (
-              <div key={`${esp}-${idx}`} className="flex items-center gap-1.5">
-                <Input
-                  className="h-8 text-sm flex-1"
-                  value={esp}
-                  onChange={(e) => {
-                    const next = [...(draft.especialidades ?? [])];
-                    next[idx] = e.target.value;
-                    setDraft({ ...draft, especialidades: next });
-                  }}
-                />
-                <Input
-                  className="h-8 text-sm w-40"
-                  placeholder="Nº registro (RQE/título)"
-                  value={(draft.especialidades_numeros ?? [])[idx] ?? ""}
-                  onChange={(e) => {
-                    const next = [...(draft.especialidades_numeros ?? [])];
-                    while (next.length <= idx) next.push("");
-                    next[idx] = e.target.value;
-                    setDraft({ ...draft, especialidades_numeros: next });
-                  }}
-                />
+          {(() => {
+            const areasSel = (draft.areas ?? (draft.area ? [draft.area] : [])) as AreaAtuacao[];
+            const isOdonto = areasSel.includes("odontologia");
+            const esps = draft.especialidades ?? [];
+            const nums = draft.especialidades_numeros ?? [];
+            const setEsp = (list: string[], numsList: string[]) => {
+              setDraft({ ...draft, especialidades: list, especialidades_numeros: numsList });
+            };
+            const toggle = (name: string) => {
+              const idx = esps.indexOf(name);
+              if (idx >= 0) {
+                setEsp(esps.filter((_, i) => i !== idx), nums.filter((_, i) => i !== idx));
+              } else {
+                setEsp([...esps, name], [...nums, ""]);
+              }
+            };
+            const setNum = (name: string, value: string) => {
+              const idx = esps.indexOf(name);
+              if (idx < 0) return;
+              const nextNums = [...nums];
+              while (nextNums.length <= idx) nextNums.push("");
+              nextNums[idx] = value;
+              setEsp(esps, nextNums);
+            };
+            if (isOdonto) {
+              const extras = esps.filter((e) => !ODONTO_ESPECIALIDADES.includes(e));
+              return (
+                <div className="border rounded-md p-2 bg-background space-y-1 max-h-72 overflow-y-auto">
+                  {ODONTO_ESPECIALIDADES.map((name) => {
+                    const checked = esps.includes(name);
+                    return (
+                      <div key={name} className="flex items-center gap-2">
+                        <label className="flex items-center gap-2 text-sm cursor-pointer flex-1 min-w-0">
+                          <Checkbox checked={checked} onCheckedChange={() => toggle(name)} />
+                          <span className="truncate">{name}</span>
+                        </label>
+                        {checked && (
+                          <Input
+                            className="h-7 text-xs w-36"
+                            placeholder="Nº registro"
+                            value={nums[esps.indexOf(name)] ?? ""}
+                            onChange={(e) => setNum(name, e.target.value)}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                  {extras.length > 0 && (
+                    <div className="pt-2 mt-2 border-t space-y-1.5">
+                      <div className="text-[11px] text-muted-foreground uppercase tracking-wider">Outras</div>
+                      {extras.map((esp) => {
+                        const idx = esps.indexOf(esp);
+                        return (
+                          <div key={`extra-${idx}`} className="flex items-center gap-1.5">
+                            <Input
+                              className="h-7 text-xs flex-1"
+                              value={esp}
+                              onChange={(e) => {
+                                const next = [...esps];
+                                next[idx] = e.target.value;
+                                setEsp(next, nums);
+                              }}
+                            />
+                            <Input
+                              className="h-7 text-xs w-36"
+                              placeholder="Nº registro"
+                              value={nums[idx] ?? ""}
+                              onChange={(e) => setNum(esp, e.target.value)}
+                            />
+                            <button
+                              type="button"
+                              className="w-6 h-6 inline-flex items-center justify-center text-muted-foreground hover:text-danger"
+                              onClick={() => setEsp(esps.filter((_, i) => i !== idx), nums.filter((_, i) => i !== idx))}
+                            >×</button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    className="text-xs text-primary hover:underline mt-2"
+                    onClick={() => setEsp([...esps, ""], [...nums, ""])}
+                  >+ Adicionar outra especialidade</button>
+                </div>
+              );
+            }
+            return (
+              <div className="border rounded-md p-2 bg-background space-y-1.5">
+                {esps.map((esp, idx) => (
+                  <div key={`${esp}-${idx}`} className="flex items-center gap-1.5">
+                    <Input
+                      className="h-8 text-sm flex-1"
+                      value={esp}
+                      onChange={(e) => {
+                        const next = [...esps];
+                        next[idx] = e.target.value;
+                        setEsp(next, nums);
+                      }}
+                    />
+                    <Input
+                      className="h-8 text-sm w-40"
+                      placeholder="Nº registro (RQE/título)"
+                      value={nums[idx] ?? ""}
+                      onChange={(e) => {
+                        const next = [...nums];
+                        while (next.length <= idx) next.push("");
+                        next[idx] = e.target.value;
+                        setEsp(esps, next);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="w-7 h-7 inline-flex items-center justify-center text-muted-foreground hover:text-danger"
+                      onClick={() => setEsp(esps.filter((_, i) => i !== idx), nums.filter((_, i) => i !== idx))}
+                      aria-label={`Remover ${esp}`}
+                    >×</button>
+                  </div>
+                ))}
                 <button
                   type="button"
-                  className="w-7 h-7 inline-flex items-center justify-center text-muted-foreground hover:text-danger"
-                  onClick={() => {
-                    const esps = (draft.especialidades ?? []).filter((_, i) => i !== idx);
-                    const nums = (draft.especialidades_numeros ?? []).filter((_, i) => i !== idx);
-                    setDraft({ ...draft, especialidades: esps, especialidades_numeros: nums });
-                  }}
-                  aria-label={`Remover ${esp}`}
-                >×</button>
+                  className="text-xs text-primary hover:underline mt-1"
+                  onClick={() => setEsp([...esps, ""], [...nums, ""])}
+                >+ Adicionar especialidade</button>
               </div>
-            ))}
-            <button
-              type="button"
-              className="text-xs text-primary hover:underline mt-1"
-              onClick={() => setDraft({
-                ...draft,
-                especialidades: [...(draft.especialidades ?? []), ""],
-                especialidades_numeros: [...(draft.especialidades_numeros ?? []), ""],
-              })}
-            >+ Adicionar especialidade</button>
-          </div>
+            );
+          })()}
         </div>
         <div>
           <Label>Telefone</Label>
