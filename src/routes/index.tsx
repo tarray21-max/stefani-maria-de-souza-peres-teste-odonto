@@ -84,26 +84,43 @@ function Index() {
       <ClientSidebar onSignOut={async () => { await signOut(); window.location.href = "/login"; }} />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="min-h-14 flex items-center gap-3 border-b border-border/60 bg-card/60 backdrop-blur-sm sticky top-0 z-30 px-3 py-2">
-          <SidebarTrigger />
-          <div className="flex-1 min-w-0">
-            <div className="font-semibold text-sm text-foreground truncate">
-              {current?.nome ?? "Selecione uma clínica"}
-            </div>
-            {current && (() => {
-              const labels: Record<string, string> = { medicina: "Médica", odontologia: "Odontológica", biomedicina: "Biomédica" };
-              const areas = (current.areas && current.areas.length > 0 ? current.areas : (current.area ? [current.area] : []))
-                .map((a) => labels[a] ?? a).join(" + ");
-              const parts = [
-                current.profissional_responsavel ? `Resp. Legal: ${current.profissional_responsavel}` : null,
-                areas ? `Área: ${areas}` : null,
-              ].filter(Boolean);
-              return parts.length ? (
-                <div className="text-[11px] text-muted-foreground truncate">{parts.join(" • ")}</div>
-              ) : null;
-            })()}
+        <header className="border-b border-border/60 bg-card/60 backdrop-blur-sm sticky top-0 z-30 px-3 py-3">
+          <div className="flex items-center gap-3">
+            <SidebarTrigger />
+            {current ? (
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold text-base">
+                  {current.nome.trim().charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-lg leading-tight text-foreground truncate">{current.nome}</div>
+                  {(() => {
+                    const labels: Record<string, string> = { medicina: "Médica", odontologia: "Odontológica", biomedicina: "Biomédica" };
+                    const areas = (current.areas && current.areas.length > 0 ? current.areas : (current.area ? [current.area] : []))
+                      .map((a) => labels[a] ?? a);
+                    const chips: { label: string; value: string }[] = [];
+                    if (current.profissional_responsavel) chips.push({ label: "Resp. Legal", value: current.profissional_responsavel });
+                    if (areas.length) chips.push({ label: "Área", value: areas.join(" + ") });
+                    if (current.especialidades && current.especialidades.length) chips.push({ label: "Especialidade", value: current.especialidades.join(", ") });
+                    if (current.cidade || current.estado) chips.push({ label: "Local", value: [current.cidade, current.estado].filter(Boolean).join(" / ") });
+                    return chips.length ? (
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        {chips.map((c) => (
+                          <span key={c.label} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] text-foreground/80">
+                            <span className="text-muted-foreground">{c.label}:</span>
+                            <span className="font-medium truncate max-w-[220px]">{c.value}</span>
+                          </span>
+                        ))}
+                      </div>
+                    ) : null;
+                  })()}
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 min-w-0 font-semibold text-sm text-muted-foreground">Selecione uma clínica</div>
+            )}
+            <ThemeToggle />
           </div>
-          <ThemeToggle />
         </header>
 
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-5">
