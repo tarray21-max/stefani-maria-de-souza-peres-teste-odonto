@@ -131,14 +131,20 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
       tipo_contrato: tipo,
       contract_type_label: editing.contract_type_label ?? null,
     };
+    let savedClientId: string | null = null;
     if (editing.id) {
       const { error } = await supabase.from("clients").update(payload).eq("id", editing.id);
       if (error) return toast.error(error.message);
+      savedClientId = editing.id;
     } else {
       const { error } = await supabase.from("clients").insert({ ...payload, owner_id: user.id });
       if (error) return toast.error(error.message);
       const { data } = await supabase.from("clients").select("id, created_at").eq("owner_id", user.id).order("created_at", { ascending: false }).limit(1);
-      if (data && data[0]) setCurrentId(data[0].id);
+      if (data && data[0]) { setCurrentId(data[0].id); savedClientId = data[0].id; }
+    }
+    if (savedClientId && area === "odontologia" && especialidades.length > 0) {
+      try { await syncProceduresForClient(savedClientId, especialidades); }
+      catch (e) { console.error("syncProceduresForClient", e); }
     }
     setEditing(null);
     await refresh();
