@@ -114,8 +114,8 @@ function Index() {
                     if (current.redes_sociais) chips.push({ label: "Redes sociais", value: current.redes_sociais });
                     return chips.length ? (
                       <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                        {chips.map((c) => (
-                          <span key={c.label} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] text-foreground/80">
+                        {chips.map((c, i) => (
+                          <span key={`${c.label}-${i}`} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] text-foreground/80">
                             <span className="text-muted-foreground">{c.label}:</span>
                             <span className="font-medium truncate max-w-[420px]">{c.value}</span>
                           </span>
