@@ -202,6 +202,7 @@ export type Database = {
           especialidades_numeros: string[]
           estado: string | null
           id: string
+          logo_url: string | null
           logradouro: string | null
           nome: string
           numero: string | null
@@ -229,6 +230,7 @@ export type Database = {
           especialidades_numeros?: string[]
           estado?: string | null
           id?: string
+          logo_url?: string | null
           logradouro?: string | null
           nome: string
           numero?: string | null
@@ -256,6 +258,7 @@ export type Database = {
           especialidades_numeros?: string[]
           estado?: string | null
           id?: string
+          logo_url?: string | null
           logradouro?: string | null
           nome?: string
           numero?: string | null
