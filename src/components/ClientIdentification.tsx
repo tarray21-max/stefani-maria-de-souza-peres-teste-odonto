@@ -92,6 +92,7 @@ export function ClientIdentification() {
       especialidades_numeros: numeros,
       endereco: draft.endereco ?? null,
       telefone: draft.telefone ?? null,
+      redes_sociais: draft.redes_sociais ?? null,
       tipo_contrato: tipo,
       contract_type_label: draft.contract_type_label ?? null,
     };
