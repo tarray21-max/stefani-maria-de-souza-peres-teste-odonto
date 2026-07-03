@@ -104,7 +104,7 @@ function Index() {
                         {current.profissional_responsavel && (
                           <div className="flex items-baseline gap-2">
                             <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground shrink-0">Responsável Legal</span>
-                            <span className="text-base font-semibold text-foreground truncate">{current.profissional_responsavel}</span>
+                            <span className="text-base font-semibold text-foreground break-words">{current.profissional_responsavel}</span>
                           </div>
                         )}
                         {esps.length > 0 && (

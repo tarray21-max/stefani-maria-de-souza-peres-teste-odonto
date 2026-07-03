@@ -169,7 +169,7 @@ export function ClientIdentification() {
               </div>
               <div className="min-w-0">
                 <div className="font-semibold text-foreground">{current.nome}</div>
-                <div className="text-xs text-muted-foreground truncate">
+                <div className="text-xs text-muted-foreground break-words">
                   {[
                     (current.areas && current.areas.length > 0 ? current.areas : [current.area]).map((a) => AREA_LABEL[a] ?? a).join(" + "),
                     current.cnpj,
@@ -187,7 +187,7 @@ export function ClientIdentification() {
                     })}
                   </div>
                 )}
-                <div className="text-xs text-muted-foreground truncate mt-1">
+                <div className="text-xs text-muted-foreground break-words mt-1">
                   {[
                     current.profissional_responsavel,
                     current.crm_cro,
@@ -292,7 +292,7 @@ export function ClientIdentification() {
                       <div key={name} className="flex items-center gap-2">
                         <label className="flex items-center gap-2 text-sm cursor-pointer flex-1 min-w-0">
                           <Checkbox checked={checked} onCheckedChange={() => toggle(name)} />
-                          <span className="truncate">{name}</span>
+                          <span className="break-words">{name}</span>
                         </label>
                         {checked && (
                           <Input
