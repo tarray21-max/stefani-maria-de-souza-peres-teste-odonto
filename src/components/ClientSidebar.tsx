@@ -18,6 +18,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatCNPJ, formatPhone } from "@/lib/format";
 import { toast } from "sonner";
 import { Building2, Plus, Pencil, Trash2, LogOut, Users, Copy } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const ODONTO_ESPECIALIDADES = [
+  "Dentística","Endodontia","Periodontia","Prótese Dentária","Ortodontia","Implantodontia",
+  "Odontopediatria","Odontogeriatria","Estomatologia","Ortopedia Funcional dos Maxilares",
+  "Disfunção Temporomandibular e Dor Orofacial (DTM)","Odontologia para Pacientes com Necessidades Especiais",
+  "Cirurgia e Traumatologia Bucomaxilofacial (CTBMF)","Cirurgia Estética Orofacial (CEOF)",
+  "Harmonização Orofacial (HOF)","Radiologia Odontológica e Imaginologia","Patologia Oral (Patologia Bucal)",
+  "Odontologia em Saúde Coletiva","Odontologia Legal","Odontologia do Trabalho","Odontologia Hospitalar",
+  "Homeopatia","Acupuntura",
+];
 import brandLogo from "@/assets/bs-logo-on-white.jpg";
 import { AccountShareDialog } from "./AccountShareDialog";
 import { PropagateStructureDialog } from "./PropagateStructureDialog";
