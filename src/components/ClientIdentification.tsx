@@ -146,16 +146,22 @@ export function ClientIdentification() {
                 <div className="text-xs text-muted-foreground truncate">
                   {[
                     (current.areas && current.areas.length > 0 ? current.areas : [current.area]).map((a) => AREA_LABEL[a] ?? a).join(" + "),
-                    (current.especialidades && current.especialidades.length > 0
-                      ? current.especialidades.map((e, i) => {
-                          const n = (current.especialidades_numeros ?? [])[i];
-                          return n ? `${e} (${n})` : e;
-                        }).join(", ")
-                      : current.especialidade),
                     current.cnpj,
                   ].filter(Boolean).join(" • ")}
                 </div>
-                <div className="text-xs text-muted-foreground truncate">
+                {(current.especialidades && current.especialidades.length > 0) && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {current.especialidades.map((e, i) => {
+                      const n = (current.especialidades_numeros ?? [])[i];
+                      return (
+                        <span key={`${e}-${i}`} className="inline-flex items-center rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-medium">
+                          {n ? `${e} (${n})` : e}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+                <div className="text-xs text-muted-foreground truncate mt-1">
                   {[
                     current.profissional_responsavel,
                     current.crm_cro,
