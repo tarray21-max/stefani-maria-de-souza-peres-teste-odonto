@@ -15,6 +15,7 @@ import { ResetButton } from "@/components/ResetButton";
 import { EvolutionTimeline } from "@/components/EvolutionTimeline";
 import { VisitorLinks } from "@/components/VisitorLinks";
 import { ClientSidebar } from "@/components/ClientSidebar";
+import { ClientLogoAvatar } from "@/components/ClientLogoAvatar";
 import { ServiceMatrix } from "@/components/ServiceMatrix";
 import { FinalReportButton } from "@/components/FinalReport";
 import { CATEGORIES, computeMaturity, scoreColorVar, type BaseCategory, type Category } from "@/lib/checklist-data";
