@@ -43,6 +43,32 @@ const AREA_LABEL: Record<AreaAtuacao, string> = {
   biomedicina: "Biomédica",
 };
 
+const ODONTO_ESPECIALIDADES = [
+  "Dentística",
+  "Endodontia",
+  "Periodontia",
+  "Prótese Dentária",
+  "Ortodontia",
+  "Implantodontia",
+  "Odontopediatria",
+  "Odontogeriatria",
+  "Estomatologia",
+  "Ortopedia Funcional dos Maxilares",
+  "Disfunção Temporomandibular e Dor Orofacial (DTM)",
+  "Odontologia para Pacientes com Necessidades Especiais",
+  "Cirurgia e Traumatologia Bucomaxilofacial (CTBMF)",
+  "Cirurgia Estética Orofacial (CEOF)",
+  "Harmonização Orofacial (HOF)",
+  "Radiologia Odontológica e Imaginologia",
+  "Patologia Oral (Patologia Bucal)",
+  "Odontologia em Saúde Coletiva",
+  "Odontologia Legal",
+  "Odontologia do Trabalho",
+  "Odontologia Hospitalar",
+  "Homeopatia",
+  "Acupuntura",
+];
+
 export function ClientIdentification() {
   const { user } = useAuth();
   const { current, setCurrentId, refresh } = useClients();
