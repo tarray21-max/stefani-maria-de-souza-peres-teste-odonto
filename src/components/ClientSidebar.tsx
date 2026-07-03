@@ -78,6 +78,7 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
       areas,
       especialidade: especialidades[0] ?? editing.especialidade ?? null,
       especialidades,
+      especialidades_numeros: (editing.especialidades_numeros ?? []).slice(0, especialidades.length).concat(Array(Math.max(0, especialidades.length - (editing.especialidades_numeros?.length ?? 0))).fill("")),
       endereco: editing.endereco ?? null,
       cep: editing.cep ?? null,
       logradouro: editing.logradouro ?? null,
