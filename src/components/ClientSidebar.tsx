@@ -19,6 +19,45 @@ import { formatCNPJ, formatPhone } from "@/lib/format";
 import { toast } from "sonner";
 import { Building2, Plus, Pencil, Trash2, LogOut, Users, Copy } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { proceduresForSpecialties } from "@/lib/odonto-procedures";
+import { SERVICOS_TCLE_POP } from "@/lib/services-data";
+
+function normalizeName(s: string): string {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+async function syncProceduresForClient(clientId: string, especialidades: string[]) {
+  const desired = proceduresForSpecialties(especialidades);
+  if (desired.length === 0) return;
+  const { data: existing } = await (supabase as any)
+    .from("service_matrix_items")
+    .select("name,default_key,position")
+    .eq("client_id", clientId);
+  const takenNames = new Set<string>();
+  let maxPos = -1;
+  for (const r of (existing ?? []) as { name: string; position: number }[]) {
+    takenNames.add(normalizeName(r.name));
+    if (r.position > maxPos) maxPos = r.position;
+  }
+  // Also dedup against built-in defaults (which exist implicitly even without rows).
+  for (const n of SERVICOS_TCLE_POP) takenNames.add(normalizeName(n));
+
+  const toInsert = desired
+    .filter((n) => !takenNames.has(normalizeName(n)))
+    .map((name, i) => ({
+      client_id: clientId,
+      name,
+      area: "odontologica",
+      categories: ["cirurgioes_dentistas"],
+      is_default: false,
+      disabled: false,
+      position: maxPos + 1 + i,
+      norma: "",
+      observacao: "",
+    }));
+  if (toInsert.length === 0) return;
+  await (supabase as any).from("service_matrix_items").insert(toInsert);
+}
 
 const ODONTO_ESPECIALIDADES = [
   "Dentística","Endodontia","Periodontia","Prótese Dentária","Ortodontia","Implantodontia",
