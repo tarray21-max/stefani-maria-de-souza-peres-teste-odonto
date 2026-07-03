@@ -297,9 +297,15 @@ export function ClientIdentification() {
           </Select>
         </div>
       </div>
-      <div>
-        <Label>Endereço</Label>
-        <Textarea rows={2} value={draft.endereco ?? ""} onChange={(e) => setDraft({ ...draft, endereco: e.target.value })} />
+      <div className="grid md:grid-cols-2 gap-3">
+        <div>
+          <Label>Endereço completo</Label>
+          <Textarea rows={2} placeholder="Rua, número, complemento, bairro, cidade/UF, CEP" value={draft.endereco ?? ""} onChange={(e) => setDraft({ ...draft, endereco: e.target.value })} />
+        </div>
+        <div>
+          <Label>Redes sociais</Label>
+          <Textarea rows={2} placeholder="Instagram: @clinica • Site: www.clinica.com.br" value={draft.redes_sociais ?? ""} onChange={(e) => setDraft({ ...draft, redes_sociais: e.target.value })} />
+        </div>
       </div>
       <div className="flex justify-end gap-2">
         {current && <Button variant="ghost" onClick={() => setEditing(false)}>Cancelar</Button>}
