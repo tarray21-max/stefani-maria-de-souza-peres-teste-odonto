@@ -223,3 +223,109 @@ export function proceduresForSpecialties(especialidades: string[]): string[] {
   }
   return Array.from(set);
 }
+
+/**
+ * Blocos operacionais (baseado no modelo estruturado da Dra. Danuze):
+ * separam os procedimentos por porte cirúrgico e tipo de consultório exigido.
+ */
+export const BLOCK_ORDER: string[] = [
+  "Cirurgia de Grande Porte - Consultório Tipo II",
+  "Cirurgia Médio Porte - Consultório Tipo II",
+  "Cirurgia Pequeno Porte - Consultório Tipo I",
+  "Injetáveis - Consultório Tipo I",
+  "Pele - Consultório Tipo I",
+];
+
+const B_GRANDE = BLOCK_ORDER[0];
+const B_MEDIO = BLOCK_ORDER[1];
+const B_PEQUENO = BLOCK_ORDER[2];
+const B_INJ = BLOCK_ORDER[3];
+const B_PELE = BLOCK_ORDER[4];
+
+/** Lista base por bloco (nomes devem casar com PROCEDURES_BY_SPECIALTY / UNIVERSAL_PROCEDURES). */
+const PROCEDURES_BY_BLOCK: Record<string, string[]> = {
+  [B_GRANDE]: [
+    "Levantamento de seio maxilar",
+    "Protocolo \"All-on-Four\" / \"All-on-Six\"",
+    "Cirurgia ortognática (correção de mordida e face)",
+    "Tratamento de fratura de face",
+    "Remoção de cisto ou tumor na boca/maxilar",
+    "Cirurgia da articulação da mandíbula (ATM)",
+    "Lifting facial (ritidoplastia)",
+    "Rinoplastia (cirurgia do nariz)",
+    "Lifting de pescoço (platismoplastia)",
+    "Atendimento sob anestesia geral (hospitalar)",
+    "Atendimento sob anestesia geral",
+    "Atendimento odontológico em hospital / UTI",
+  ],
+  [B_MEDIO]: [
+    "Cirurgia de ponta de raiz (apicectomia)",
+    "Enxerto de gengiva",
+    "Implante dentário unitário",
+    "Implante de vários dentes",
+    "Enxerto ósseo",
+    "Carga imediata (dente no mesmo dia)",
+    "Cirurgia guiada por computador",
+    "Atendimento sob sedação",
+    "Extração de siso (dente do siso)",
+    "Extração de dente incluso",
+    "Bichectomia",
+    "Blefaroplastia (cirurgia das pálpebras)",
+    "Otoplastia (cirurgia da orelha)",
+    "Rinoplastia da ponta do nariz (alectomia)",
+    "Lipoaspiração de papada",
+    "Lipoaspiração facial",
+    "Lipoaspiração do pescoço (cervical)",
+    "Lipectomia facial",
+    "Lipectomia do pescoço",
+    "Enxerto de gordura no rosto (lipoenxertia facial)",
+    "Elevação de sobrancelha (cirúrgica)",
+    "Lifting de lábio (lip lifting)",
+    "Reconstrução labial",
+    "Cirurgia dos lábios (queiloplastia)",
+  ],
+  [B_INJ]: [
+    "Toxina botulínica para bruxismo / apertamento",
+    "Toxina botulínica (Botox)",
+    "Preenchimento com ácido hialurônico",
+    "Preenchimento labial",
+    "Rinomodelação (harmonização do nariz sem cirurgia)",
+    "Bioestimulador de colágeno (Sculptra / PLLA)",
+    "Bioestimulador de colágeno (Radiesse / hidroxiapatita de cálcio)",
+    "Bioestimulador de colágeno (Ellansé / policaprolactona)",
+    "Skinbooster (hidratação profunda da pele)",
+    "PDRN (regeneração da pele / \"salmão\")",
+    "Fios de sustentação (fios de PDO lisos)",
+    "Fios de sustentação (fios de PDO espiculados)",
+    "Fios de sustentação não absorvíveis (nylon)",
+    "Otomodelação com fio",
+    "Lipo de papada enzimática (lipólise / intradermoterapia)",
+  ],
+  [B_PELE]: [
+    "Limpeza de pele",
+    "Peeling químico",
+    "Microagulhamento",
+    "Jato de plasma",
+    "Fotodepilação a laser (Laser Adhara – alta potência)",
+    "Laser Lavien",
+    "Laser de baixa potência (Laser Pison)",
+    "Ultrassom microfocado e macrofocado (HIPRO)",
+    "Ultrassom microfocado e macrofocado (Ultraformer III / MPT)",
+  ],
+  // Pequeno porte é o "resto" — não precisa listar aqui; blockForProcedure faz fallback.
+  [B_PEQUENO]: [],
+};
+
+function norm(s: string): string {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+const BLOCK_LOOKUP = new Map<string, string>();
+for (const [block, list] of Object.entries(PROCEDURES_BY_BLOCK)) {
+  for (const p of list) BLOCK_LOOKUP.set(norm(p), block);
+}
+
+/** Retorna o nome do bloco correspondente ao procedimento. Fallback: Pequeno porte. */
+export function blockForProcedure(procedureName: string): string {
+  return BLOCK_LOOKUP.get(norm(procedureName)) ?? B_PEQUENO;
+}
