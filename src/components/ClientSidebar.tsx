@@ -19,31 +19,43 @@ import { formatCNPJ, formatPhone } from "@/lib/format";
 import { toast } from "sonner";
 import { Building2, Plus, Pencil, Trash2, LogOut, Users, Copy } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { proceduresForSpecialties } from "@/lib/odonto-procedures";
-import { SERVICOS_TCLE_POP } from "@/lib/services-data";
+import { proceduresForSpecialties, blockForProcedure, BLOCK_ORDER } from "@/lib/odonto-procedures";
+import { SERVICOS_TCLE_POP, serviceSlug } from "@/lib/services-data";
 
 function normalizeName(s: string): string {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
+function newId(): string {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `b_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
 async function syncProceduresForClient(clientId: string, especialidades: string[]) {
   const desired = proceduresForSpecialties(especialidades);
   if (desired.length === 0) return;
+
+  // 1) Load existing custom/override rows.
   const { data: existing } = await (supabase as any)
     .from("service_matrix_items")
-    .select("name,default_key,position")
+    .select("id,name,default_key,position")
     .eq("client_id", clientId);
-  const takenNames = new Set<string>();
+  const existingByNorm = new Map<string, { id: string; name: string }>();
   let maxPos = -1;
-  for (const r of (existing ?? []) as { name: string; position: number }[]) {
-    takenNames.add(normalizeName(r.name));
+  for (const r of (existing ?? []) as { id: string; name: string; position: number }[]) {
+    existingByNorm.set(normalizeName(r.name), { id: r.id, name: r.name });
     if (r.position > maxPos) maxPos = r.position;
   }
-  // Also dedup against built-in defaults (which exist implicitly even without rows).
-  for (const n of SERVICOS_TCLE_POP) takenNames.add(normalizeName(n));
+  // Built-in defaults have virtual ids "default:<slug>".
+  const defaultByNorm = new Map<string, { id: string }>();
+  for (const n of SERVICOS_TCLE_POP) {
+    defaultByNorm.set(normalizeName(n), { id: `default:${serviceSlug(n)}` });
+  }
 
+  // 2) Insert missing procedures as custom items.
   const toInsert = desired
-    .filter((n) => !takenNames.has(normalizeName(n)))
+    .filter((n) => !existingByNorm.has(normalizeName(n)) && !defaultByNorm.has(normalizeName(n)))
     .map((name, i) => ({
       client_id: clientId,
       name,
@@ -55,8 +67,63 @@ async function syncProceduresForClient(clientId: string, especialidades: string[
       norma: "",
       observacao: "",
     }));
-  if (toInsert.length === 0) return;
-  await (supabase as any).from("service_matrix_items").insert(toInsert);
+  let inserted: { id: string; name: string }[] = [];
+  if (toInsert.length > 0) {
+    const { data } = await (supabase as any)
+      .from("service_matrix_items")
+      .insert(toInsert)
+      .select("id,name");
+    inserted = (data ?? []) as { id: string; name: string }[];
+  }
+
+  // 3) Resolve every desired procedure to its item id (custom or default).
+  const idFor = (name: string): string | null => {
+    const k = normalizeName(name);
+    if (existingByNorm.has(k)) return existingByNorm.get(k)!.id;
+    const ins = inserted.find((r) => normalizeName(r.name) === k);
+    if (ins) return ins.id;
+    if (defaultByNorm.has(k)) return defaultByNorm.get(k)!.id;
+    return null;
+  };
+
+  // 4) Group desired procedures by their operational block.
+  const byBlock = new Map<string, string[]>();
+  for (const name of desired) {
+    const bname = blockForProcedure(name);
+    const id = idFor(name);
+    if (!id) continue;
+    const list = byBlock.get(bname) ?? [];
+    if (!list.includes(id)) list.push(id);
+    byBlock.set(bname, list);
+  }
+
+  // 5) Load current TCLE×POP blocks and upsert the operational ones.
+  const { data: bdata } = await (supabase as any)
+    .from("checklist_blocks")
+    .select("id,name,item_ids,position")
+    .eq("client_id", clientId)
+    .eq("category", "tcle_pop_matrix")
+    .order("position", { ascending: true });
+  const existingBlocks = (bdata ?? []) as { id: string; name: string; item_ids: string[]; position: number }[];
+  const byName = new Map(existingBlocks.map((b) => [b.name.trim().toLowerCase(), b]));
+  let posCursor = existingBlocks.reduce((m, b) => Math.max(m, b.position), -1) + 1;
+
+  const upserts: { id: string; client_id: string; category: string; name: string; item_ids: string[]; position: number }[] = [];
+  for (const bname of BLOCK_ORDER) {
+    const wantIds = byBlock.get(bname) ?? [];
+    const found = byName.get(bname.trim().toLowerCase());
+    if (found) {
+      const merged = Array.from(new Set([...(found.item_ids ?? []), ...wantIds]));
+      if (merged.length !== (found.item_ids ?? []).length) {
+        upserts.push({ id: found.id, client_id: clientId, category: "tcle_pop_matrix", name: found.name, item_ids: merged, position: found.position });
+      }
+    } else if (wantIds.length > 0) {
+      upserts.push({ id: newId(), client_id: clientId, category: "tcle_pop_matrix", name: bname, item_ids: wantIds, position: posCursor++ });
+    }
+  }
+  if (upserts.length > 0) {
+    await (supabase as any).from("checklist_blocks").upsert(upserts, { onConflict: "id" });
+  }
 }
 
 const ODONTO_ESPECIALIDADES = [
