@@ -102,11 +102,10 @@ function Index() {
                     if (current.profissional_responsavel) chips.push({ label: "Resp. Legal", value: current.profissional_responsavel });
                     if (areas.length) chips.push({ label: "Área", value: areas.join(" + ") });
                     if (current.especialidades && current.especialidades.length) {
-                      const esps = current.especialidades.map((e, i) => {
+                      current.especialidades.forEach((e, i) => {
                         const n = (current.especialidades_numeros ?? [])[i];
-                        return n ? `${e} (${n})` : e;
+                        chips.push({ label: "Especialidade", value: n ? `${e} (${n})` : e });
                       });
-                      chips.push({ label: esps.length > 1 ? "Especialidades" : "Especialidade", value: esps.join(", ") });
                     }
                     const enderecoCompleto = current.endereco?.trim()
                       || [current.logradouro, current.numero, current.complemento, current.bairro, [current.cidade, current.estado].filter(Boolean).join("/"), current.cep].filter(Boolean).join(", ");
