@@ -209,9 +209,6 @@ export function ClientSidebar({ onSignOut }: { onSignOut: () => void }) {
           <DialogHeader><DialogTitle>{editing?.id ? "Editar clínica" : "Nova clínica"}</DialogTitle></DialogHeader>
           {editing && (
             <div className="grid md:grid-cols-2 gap-3 overflow-y-auto pr-1 flex-1 min-h-0">
-          <DialogHeader><DialogTitle>{editing?.id ? "Editar clínica" : "Nova clínica"}</DialogTitle></DialogHeader>
-          {editing && (
-            <div className="grid md:grid-cols-2 gap-3">
               <div className="md:col-span-2">
                 <Label>Nome *</Label>
                 <Input value={editing.nome ?? ""} onChange={(e) => setEditing({ ...editing, nome: e.target.value })} />
