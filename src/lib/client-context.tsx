@@ -28,6 +28,7 @@ export interface ClientRow {
   especialidades: string[];
   especialidades_numeros: string[];
   crm_cro: string | null;
+  logo_url: string | null;
 }
 
 interface ClientCtx {

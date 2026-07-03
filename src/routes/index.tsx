@@ -15,6 +15,7 @@ import { ResetButton } from "@/components/ResetButton";
 import { EvolutionTimeline } from "@/components/EvolutionTimeline";
 import { VisitorLinks } from "@/components/VisitorLinks";
 import { ClientSidebar } from "@/components/ClientSidebar";
+import { ClientLogoAvatar } from "@/components/ClientLogoAvatar";
 import { ServiceMatrix } from "@/components/ServiceMatrix";
 import { FinalReportButton } from "@/components/FinalReport";
 import { CATEGORIES, computeMaturity, scoreColorVar, type BaseCategory, type Category } from "@/lib/checklist-data";
@@ -89,9 +90,8 @@ function Index() {
             <SidebarTrigger className="mt-1" />
             {current ? (
               <div className="flex items-start gap-4 flex-1 min-w-0">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/60 text-primary-foreground flex items-center justify-center shrink-0 font-bold text-2xl shadow-md">
-                  {current.nome.trim().charAt(0).toUpperCase()}
-                </div>
+                <ClientLogoAvatar client={current} />
+
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-2xl leading-tight text-foreground truncate">{current.nome}</div>
                   {(() => {
