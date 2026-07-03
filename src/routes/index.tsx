@@ -84,44 +84,45 @@ function Index() {
       <ClientSidebar onSignOut={async () => { await signOut(); window.location.href = "/login"; }} />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="border-b border-border/60 bg-card/60 backdrop-blur-sm sticky top-0 z-30 px-3 py-3">
-          <div className="flex items-center gap-3">
-            <SidebarTrigger />
+        <header className="border-b border-border/60 bg-gradient-to-br from-card to-card/40 backdrop-blur-sm sticky top-0 z-30 px-4 py-5">
+          <div className="flex items-start gap-4">
+            <SidebarTrigger className="mt-1" />
             {current ? (
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold text-base">
+              <div className="flex items-start gap-4 flex-1 min-w-0">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/60 text-primary-foreground flex items-center justify-center shrink-0 font-bold text-2xl shadow-md">
                   {current.nome.trim().charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold text-lg leading-tight text-foreground truncate">{current.nome}</div>
+                  <div className="font-bold text-2xl leading-tight text-foreground truncate">{current.nome}</div>
                   {(() => {
-                    const labels: Record<string, string> = { medicina: "Médica", odontologia: "Odontológica", biomedicina: "Biomédica" };
-                    const areas = (current.areas && current.areas.length > 0 ? current.areas : (current.area ? [current.area] : []))
-                      .map((a) => labels[a] ?? a);
-                    const chips: { label: string; value: string }[] = [];
-                    if (current.profissional_responsavel) chips.push({ label: "Resp. Legal", value: current.profissional_responsavel });
-                    if (areas.length) chips.push({ label: "Área", value: areas.join(" + ") });
-                    if (current.especialidades && current.especialidades.length) {
-                      current.especialidades.forEach((e, i) => {
-                        const n = (current.especialidades_numeros ?? [])[i];
-                        chips.push({ label: "Especialidade", value: n ? `${e} (${n})` : e });
-                      });
-                    }
-                    const enderecoCompleto = current.endereco?.trim()
-                      || [current.logradouro, current.numero, current.complemento, current.bairro, [current.cidade, current.estado].filter(Boolean).join("/"), current.cep].filter(Boolean).join(", ");
-                    if (enderecoCompleto) chips.push({ label: "Endereço", value: enderecoCompleto });
-                    if (current.telefone) chips.push({ label: "Telefone", value: current.telefone });
-                    if (current.redes_sociais) chips.push({ label: "Redes sociais", value: current.redes_sociais });
-                    return chips.length ? (
-                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                        {chips.map((c, i) => (
-                          <span key={`${c.label}-${i}`} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] text-foreground/80">
-                            <span className="text-muted-foreground">{c.label}:</span>
-                            <span className="font-medium truncate max-w-[420px]">{c.value}</span>
-                          </span>
-                        ))}
+                    const esps = (current.especialidades ?? []).map((e, i) => {
+                      const n = (current.especialidades_numeros ?? [])[i];
+                      return n ? `${e} (${n})` : e;
+                    });
+                    return (
+                      <div className="mt-2 space-y-1.5">
+                        {current.profissional_responsavel && (
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground shrink-0">Responsável Legal</span>
+                            <span className="text-base font-semibold text-foreground truncate">{current.profissional_responsavel}</span>
+                          </div>
+                        )}
+                        {esps.length > 0 && (
+                          <div className="flex items-baseline gap-2 flex-wrap">
+                            <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground shrink-0">
+                              {esps.length > 1 ? "Especialidades" : "Especialidade"}
+                            </span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {esps.map((e, i) => (
+                                <span key={`${e}-${i}`} className="inline-flex items-center rounded-full bg-primary/10 text-primary px-3 py-1 text-sm font-medium">
+                                  {e}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    ) : null;
+                    );
                   })()}
                 </div>
               </div>
@@ -131,6 +132,7 @@ function Index() {
             <ThemeToggle />
           </div>
         </header>
+
 
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-5">
           {!current && clients.length === 0 ? (
