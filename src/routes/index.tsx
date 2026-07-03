@@ -118,7 +118,7 @@ function Index() {
                         {chips.map((c) => (
                           <span key={c.label} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] text-foreground/80">
                             <span className="text-muted-foreground">{c.label}:</span>
-                            <span className="font-medium truncate max-w-[220px]">{c.value}</span>
+                            <span className="font-medium truncate max-w-[420px]">{c.value}</span>
                           </span>
                         ))}
                       </div>
