@@ -232,9 +232,14 @@ export function ServiceMatrix({ answers, setAnswer, clientId, readOnly }: Props)
       its.forEach((i) => used.add(i.id));
       out.push({ block: b, items: its });
     }
-    const leftover = rows.filter((i) => !used.has(i.id));
-    if (blocks.length === 0) out.push({ block: null, items: leftover });
-    else if (leftover.length) out.push({ block: null, items: leftover });
+    // Quando existirem blocos (fluxo validado por especialidade), exibir
+    // apenas os procedimentos pertencentes a algum bloco. "Demais
+    // procedimentos" só aparece quando nenhum bloco foi criado (fallback
+    // para clínicas sem especialidades definidas).
+    if (blocks.length === 0) {
+      const leftover = rows.filter((i) => !used.has(i.id));
+      out.push({ block: null, items: leftover });
+    }
     return out;
   }, [blocks, rows]);
 
