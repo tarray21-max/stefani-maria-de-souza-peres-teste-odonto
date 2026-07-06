@@ -293,29 +293,56 @@ export function ClientIdentification() {
             };
             if (isOdonto) {
               const extras = esps.filter((e) => !ODONTO_ESPECIALIDADES.includes(e));
+              const selCount = esps.filter((e) => e.trim()).length;
               return (
-                <div className="border rounded-md p-2 bg-background space-y-1 max-h-72 overflow-y-auto">
-                  {ODONTO_ESPECIALIDADES.map((name) => {
-                    const checked = esps.includes(name);
-                    return (
-                      <div key={name} className="flex items-center gap-2">
-                        <label className="flex items-center gap-2 text-sm cursor-pointer flex-1 min-w-0">
-                          <Checkbox checked={checked} onCheckedChange={() => toggle(name)} />
-                          <span className="break-words">{name}</span>
-                        </label>
-                        {checked && (
-                          <Input
-                            className="h-7 text-xs w-36"
-                            placeholder="Nº registro"
-                            value={nums[esps.indexOf(name)] ?? ""}
-                            onChange={(e) => setNum(name, e.target.value)}
-                          />
-                        )}
-                      </div>
-                    );
-                  })}
+                <div className="border rounded-md p-3 bg-background space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-semibold text-foreground">Especialidades odontológicas</div>
+                    <div className="text-xs text-muted-foreground">
+                      {selCount === 0 ? "nenhuma selecionada" : `${selCount} selecionada${selCount > 1 ? "s" : ""}`}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {ODONTO_ESPECIALIDADES.map((name) => {
+                      const checked = esps.includes(name);
+                      return (
+                        <button
+                          key={name}
+                          type="button"
+                          onClick={() => toggle(name)}
+                          className={
+                            "px-3 py-1.5 rounded-full border text-sm transition-colors " +
+                            (checked
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-background text-foreground border-border hover:bg-muted")
+                          }
+                        >
+                          {name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {esps.filter((e) => ODONTO_ESPECIALIDADES.includes(e)).length > 0 && (
+                    <div className="pt-3 border-t space-y-1.5">
+                      <div className="text-[11px] text-muted-foreground uppercase tracking-wider">Nº de registro</div>
+                      {esps.map((esp, idx) => {
+                        if (!ODONTO_ESPECIALIDADES.includes(esp)) return null;
+                        return (
+                          <div key={`num-${idx}`} className="flex items-center gap-2">
+                            <span className="text-xs text-foreground flex-1 min-w-0 truncate">{esp}</span>
+                            <Input
+                              className="h-7 text-xs w-40"
+                              placeholder="Nº registro"
+                              value={nums[idx] ?? ""}
+                              onChange={(e) => setNum(esp, e.target.value)}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                   {extras.length > 0 && (
-                    <div className="pt-2 mt-2 border-t space-y-1.5">
+                    <div className="pt-3 border-t space-y-1.5">
                       <div className="text-[11px] text-muted-foreground uppercase tracking-wider">Outras</div>
                       {extras.map((esp) => {
                         const idx = esps.indexOf(esp);
@@ -348,7 +375,7 @@ export function ClientIdentification() {
                   )}
                   <button
                     type="button"
-                    className="text-xs text-primary hover:underline mt-2"
+                    className="text-xs text-primary hover:underline"
                     onClick={() => setEsp([...esps, ""], [...nums, ""])}
                   >+ Adicionar outra especialidade</button>
                 </div>
