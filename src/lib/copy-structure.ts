@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 /**
  * MESCLA a estrutura (perguntas customizadas, blocos, abas, ordens, itens desativados,
  * matriz de serviços e overrides) de uma clínica origem para várias clínicas destino,
- * SEM apagar dados já existentes no destino e SEM tocar nas respostas (`responses`).
+ * SEM apagar dados já existentes no destino. As respostas (`responses`) da origem
+ * são replicadas para os itens equivalentes do destino.
  *
  * Regras de merge:
  * - custom_items: combina por (category + título normalizado). Se já existir no destino,
@@ -142,6 +143,12 @@ export async function copyClientStructure(sourceId: string, targetIds: string[])
         const next = customIdMap.get(orig);
         return next ? `c_${next}` : id;
       }
+      const serviceCustomMatch = id.match(/^srv_(tcle|pop)_custom_(.+)$/);
+      if (serviceCustomMatch) {
+        const [, kind, orig] = serviceCustomMatch;
+        const next = smIdMap.get(orig);
+        return next ? `srv_${kind}_custom_${next}` : id;
+      }
       const sm = smIdMap.get(id);
       return sm ?? id;
     };
@@ -249,10 +256,11 @@ export async function copyClientStructure(sourceId: string, targetIds: string[])
 
     // 10b. Respostas: replicar todas as respostas da origem para o destino (upsert).
     //      item_ids customizados/matriz são remapeados para os novos IDs no destino.
-    const { data: srcResponses } = await supabase
+    const { data: srcResponses, error: srcResponsesError } = await supabase
       .from("responses")
       .select("item_id, answer, quality, justification, validity_date, validity_indeterminate")
       .eq("client_id", sourceId);
+    if (srcResponsesError) throw srcResponsesError;
     const responseRows = ((srcResponses ?? []) as Array<Record<string, any>>).map((r) => ({
       client_id: targetId,
       item_id: remapItemId(r.item_id as string),
@@ -265,9 +273,10 @@ export async function copyClientStructure(sourceId: string, targetIds: string[])
     if (responseRows.length) {
       const chunk = 500;
       for (let i = 0; i < responseRows.length; i += chunk) {
-        await supabase
+        const { error } = await supabase
           .from("responses")
           .upsert(responseRows.slice(i, i + chunk) as never, { onConflict: "client_id,item_id" });
+        if (error) throw error;
       }
     }
 
