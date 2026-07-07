@@ -52,7 +52,8 @@ export function PropagateStructureDialog({ open, onOpenChange, sourceId }: Props
             no destino são adicionados. Itens que já existem são mantidos — campos vazios (norma,
             observação, penalidade) são preenchidos com o conteúdo da origem, mas nada é sobrescrito.
             <br />
-            <strong>Respostas, observações e dados já preenchidos no destino são preservados.</strong>
+            <strong>Respostas (sim / não / n/a), qualidade, justificativas e validades são replicadas
+            da origem — respostas já existentes no destino serão sobrescritas.</strong>
           </div>
         </div>
 

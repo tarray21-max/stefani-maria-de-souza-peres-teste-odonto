@@ -247,6 +247,30 @@ export async function copyClientStructure(sourceId: string, targetIds: string[])
       }
     }
 
+    // 10b. Respostas: replicar todas as respostas da origem para o destino (upsert).
+    //      item_ids customizados/matriz são remapeados para os novos IDs no destino.
+    const { data: srcResponses } = await supabase
+      .from("responses")
+      .select("item_id, answer, quality, justification, validity_date, validity_indeterminate")
+      .eq("client_id", sourceId);
+    const responseRows = ((srcResponses ?? []) as Array<Record<string, any>>).map((r) => ({
+      client_id: targetId,
+      item_id: remapItemId(r.item_id as string),
+      answer: r.answer,
+      quality: r.quality,
+      justification: r.justification,
+      validity_date: r.validity_date,
+      validity_indeterminate: r.validity_indeterminate,
+    }));
+    if (responseRows.length) {
+      const chunk = 500;
+      for (let i = 0; i < responseRows.length; i += chunk) {
+        await supabase
+          .from("responses")
+          .upsert(responseRows.slice(i, i + chunk) as never, { onConflict: "client_id,item_id" });
+      }
+    }
+
     // 11. UI prefs: aplicar somente se o destino não tem preferências ainda
     if (srcPrefs && !dstPrefs) {
       await supabase.from("client_ui_prefs" as never).upsert({
