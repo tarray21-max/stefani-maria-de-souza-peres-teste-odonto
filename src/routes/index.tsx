@@ -18,6 +18,7 @@ import { ClientSidebar } from "@/components/ClientSidebar";
 import { ClientLogoAvatar } from "@/components/ClientLogoAvatar";
 import { ServiceMatrix } from "@/components/ServiceMatrix";
 import { FinalReportButton } from "@/components/FinalReport";
+import { ExportAllDataButton } from "@/components/ExportAllDataButton";
 import { CATEGORIES, computeMaturity, scoreColorVar, type BaseCategory, type Category } from "@/lib/checklist-data";
 import { useAuth } from "@/lib/auth-context";
 import { useClients } from "@/lib/client-context";
@@ -192,6 +193,7 @@ function ClientWorkspace({ clientId }: { clientId: string }) {
         </div>
         <div className="flex items-center gap-2">
           <VisitorLinks clientId={clientId} />
+          <ExportAllDataButton />
           <FinalReportButton client={current ?? null} answers={answers} items={items} categoryLabels={dashboardLabels} />
           <ResetButton onConfirm={(j) => reset(j)} />
         </div>
