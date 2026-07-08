@@ -198,6 +198,17 @@ export function Dashboard({ answers, items, client, categoryLabels, categoryOrde
             <p className="text-xs text-muted-foreground mt-3">
               {c.result.totalSim}/{c.result.totalApplicable} conformes
             </p>
+            <div className="mt-3 flex items-center gap-1.5 flex-wrap text-[11px] font-medium">
+              <span className="px-2 py-0.5 rounded-full border border-success/30 bg-success/10 text-success">
+                Sim {c.result.totalSim}
+              </span>
+              <span className="px-2 py-0.5 rounded-full border border-danger/30 bg-danger/10 text-danger">
+                Não {c.result.totalNao}
+              </span>
+              <span className="px-2 py-0.5 rounded-full border border-border bg-muted text-muted-foreground">
+                N/A {c.result.totalNa}
+              </span>
+            </div>
           </Card>
         ))}
       </div>
