@@ -198,5 +198,11 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
   .print-report h1, .print-report h2, .print-report h3 { color: #000 !important; }
   .print-report table { page-break-inside: auto; }
   .print-report tr, .print-report .avoid-break { page-break-inside: avoid; }
+  /* Força <details> a abrir e some ícone de chevron na impressão */
+  .print-report details { break-inside: avoid; }
+  .print-report details > summary { list-style: none; cursor: default; }
+  .print-report details > summary svg { display: none !important; }
+  .print-report details[open] > * { display: block; }
 }
+
 

@@ -182,48 +182,69 @@ export function Dashboard({ answers, items, client, categoryLabels, categoryOrde
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {perCategory.map((c) => (
-          <Card
-            key={c.id}
-            className="p-6 border-primary/15"
-            style={{ background: "linear-gradient(180deg, var(--card), color-mix(in oklab, var(--primary) 5%, var(--card)))" }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-foreground">{c.short}</h3>
-              <span className="text-sm font-bold" style={{ color: scoreColorVar(c.result.score) }}>
-                {Math.round(c.result.score)}%
-              </span>
-            </div>
-            <Progress value={c.result.score} className="h-2" />
-            <p className="text-xs text-muted-foreground mt-3">
-              {c.result.totalSim}/{c.result.totalApplicable} conformes
-            </p>
-            <div className="mt-3 flex items-center gap-1.5 flex-wrap text-[11px] font-medium">
-              <span className="px-2 py-0.5 rounded-full border border-success/30 bg-success/10 text-success">
-                Sim {c.result.totalSim}
-              </span>
-              <span className="px-2 py-0.5 rounded-full border border-danger/30 bg-danger/10 text-danger">
-                Não {c.result.totalNao}
-              </span>
-              <span className="px-2 py-0.5 rounded-full border border-border bg-muted text-muted-foreground">
-                N/A {c.result.totalNa}
-              </span>
-            </div>
-          </Card>
-        ))}
+        {perCategory.map((c) => {
+          const isCritical = c.result.totalApplicable > 0 && c.result.score < 40;
+          return (
+            <Card
+              key={c.id}
+              className={`p-6 relative ${isCritical ? "border-2 border-danger ring-2 ring-danger/20" : "border-primary/15"}`}
+              style={{
+                background: isCritical
+                  ? "linear-gradient(180deg, var(--card), color-mix(in oklab, var(--danger) 8%, var(--card)))"
+                  : "linear-gradient(180deg, var(--card), color-mix(in oklab, var(--primary) 5%, var(--card)))",
+              }}
+            >
+              {isCritical && (
+                <span className="absolute -top-2 -right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-danger text-white text-[10px] font-bold uppercase tracking-wider shadow-md">
+                  <AlertTriangle className="w-3 h-3" /> Crítico
+                </span>
+              )}
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-foreground">{c.short}</h3>
+                <span className="text-sm font-bold" style={{ color: scoreColorVar(c.result.score) }}>
+                  {Math.round(c.result.score)}%
+                </span>
+              </div>
+              <Progress value={c.result.score} className="h-2" />
+              <p className="text-xs text-muted-foreground mt-3">
+                {c.result.totalSim}/{c.result.totalApplicable} conformes
+              </p>
+              <div className="mt-3 flex items-center gap-1.5 flex-wrap text-[11px] font-medium">
+                <span className="px-2 py-0.5 rounded-full border border-success/30 bg-success/10 text-success">
+                  Sim {c.result.totalSim}
+                </span>
+                <span className="px-2 py-0.5 rounded-full border border-danger/30 bg-danger/10 text-danger">
+                  Não {c.result.totalNao}
+                </span>
+                <span className="px-2 py-0.5 rounded-full border border-border bg-muted text-muted-foreground">
+                  N/A {c.result.totalNa}
+                </span>
+              </div>
+            </Card>
+          );
+        })}
       </div>
 
+
       <Card
-        className="p-6 border-primary/15"
-        style={{ background: "linear-gradient(180deg, var(--card), color-mix(in oklab, var(--primary) 4%, var(--card)))" }}
+        className="p-6 md:p-7 border-2 border-danger/40 col-span-full"
+        style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--danger) 6%, var(--card)), var(--card))" }}
       >
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-danger/10">
-            <AlertTriangle className="w-5 h-5 text-danger" />
+        <div className="flex items-center gap-3 mb-5 pb-4 border-b border-danger/20">
+          <div className="w-11 h-11 rounded-lg flex items-center justify-center bg-danger text-white shadow-md">
+            <AlertTriangle className="w-6 h-6" />
           </div>
-          <h3 className="font-semibold text-foreground">Principais Gargalos</h3>
-          <span className="text-xs text-muted-foreground ml-auto">Itens "Não" com maior peso</span>
+          <div className="min-w-0 flex-1">
+            <h3 className="text-lg font-bold text-foreground leading-tight">Principais Gargalos</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">Itens "Não" com maior peso — priorize a resolução</p>
+          </div>
+          {gargalos.length > 0 && (
+            <span className="px-3 py-1 rounded-full bg-danger text-white text-xs font-bold uppercase tracking-wider">
+              {gargalos.length} crítico{gargalos.length > 1 ? "s" : ""}
+            </span>
+          )}
         </div>
+
         {gargalos.length === 0 ? (
           <p className="text-sm text-muted-foreground py-6 text-center">
             Nenhum gargalo crítico identificado.
